@@ -85,11 +85,14 @@ Con ella se generan el sitemap (`sitemap-index.xml`), la línea `Sitemap:` de `r
 
 ## Diagramas
 
-Se generan con Archify desde `../research/nuevos-diagramas/generar.mjs`:
+Se definen en `scripts/generar-diagramas.mjs` y se generan con la skill [Archify](https://github.com/tt-a1i/archify), que debe estar instalada en `.claude/skills/archify` (no se versiona):
 
 ```sh
-node generar.mjs [slug ...]   # genera y copia a public/diagrams/
+npm run generar:diagramas                  # los 30
+npm run generar:diagramas -- solid-srp     # solo algunos
 ```
+
+El resultado se copia a `public/diagrams/` con el estilo de `scripts/ajuste-diagramas.html`.
 
 Después de regenerar un diagrama hay que ejecutar `npm run medir:diagramas`. Los diagramas se cargan al acercarse a ellos (`src/components/DiagramaArchify.astro`), y su alto se reserva antes con esas medidas para que la página no salte; `npm run check:diagrams` avisa si una medida quedó desactualizada.
 

@@ -13,6 +13,7 @@
     "check:diagrams": "node scripts/check-diagrams.mjs",
     "verificar:codigo": "node scripts/verificar-codigo.mjs",
     "generar:og": "node scripts/generar-og.mjs",
+    "generar:diagramas": "node scripts/generar-diagramas.mjs",
     "medir:diagramas": "node scripts/medir-diagramas.mjs"
   },
   "dependencies": {

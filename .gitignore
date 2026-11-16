@@ -22,3 +22,7 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# skill de terceros para generar diagramas (se instala aparte) y ajustes locales de Claude Code
+.claude/skills/archify/
+.claude/settings.local.json
