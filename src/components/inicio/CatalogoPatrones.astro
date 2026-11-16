@@ -1,0 +1,75 @@
+---
+import { PATTERNS, CATEGORIAS } from '../../data/patterns';
+
+const estilo = {
+  creacionales: { color: 'text-primary-container', borde: 'hover:border-primary-container/50', dot: 'bg-primary-container' },
+  estructurales: { color: 'text-tertiary-fixed-dim', borde: 'hover:border-tertiary-fixed-dim/50', dot: 'bg-tertiary-fixed-dim' },
+  comportamiento: { color: 'text-secondary-container', borde: 'hover:border-secondary-container/50', dot: 'bg-secondary-container' },
+};
+const patrones = [...PATTERNS].sort((a, b) => a.order - b.order);
+---
+
+<section id="patrones" class="scroll-mt-24 flex flex-col gap-5">
+  <div class="flex items-end justify-between flex-wrap gap-3">
+    <div>
+      <span class="font-badge text-[10px] text-tertiary-fixed-dim uppercase tracking-widest">Paso 04</span>
+      <h2 class="font-headline text-2xl font-bold uppercase text-primary mt-1">23 patrones de diseño</h2>
+      <p class="font-body text-sm text-slate-300 mt-1">Busca por el problema que tienes, no por el nombre del patrón.</p>
+    </div>
+    <div class="flex flex-wrap gap-2 font-telemetry text-[11px]" role="group" aria-label="Filtrar por categoría">
+      <button type="button" data-filtro="todos" aria-pressed="true" class="filtro-btn px-3 py-1.5 rounded-full border border-primary-container/40 bg-primary-container/15 text-primary">Todos · {patrones.length}</button>
+      {CATEGORIAS.map((c) => (
+        <button type="button" data-filtro={c.id} aria-pressed="false" title={c.desc} class="filtro-btn px-3 py-1.5 rounded-full border border-surface-container-high bg-surface-container-low text-on-surface-variant hover:text-primary">
+          {c.label} · {patrones.filter((p) => p.category === c.id).length}
+        </button>
+      ))}
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    {patrones.map((p) => {
+      const e = estilo[p.category];
+      return (
+        <a href={`/patrones/${p.category}/${p.slug}`} data-categoria={p.category} class={`patron-card p-4 rounded-xl bg-surface-container-lowest/90 border border-surface-container-high ${e.borde} transition-all flex flex-col gap-2.5`}>
+          <div class="flex items-start justify-between gap-2">
+            <h3 transition:name={`patron-${p.slug}`} class="font-code text-sm font-bold text-slate-100 w-fit">{p.name}</h3>
+            <span class={`flex items-center gap-1.5 font-badge text-[9px] uppercase tracking-wider shrink-0 mt-0.5 ${e.color}`}>
+              <span class={`w-1.5 h-1.5 rounded-full ${e.dot}`}></span>{CATEGORIAS.find((c) => c.id === p.category)?.label}
+            </span>
+          </div>
+          <p class="font-body text-xs text-slate-300 leading-relaxed">“{p.problema}”</p>
+        </a>
+      );
+    })}
+  </div>
+</section>
+
+<script>
+  // Filtro del catálogo. Con View Transitions, las cards se reacomodan con una animación.
+  document.addEventListener('astro:page-load', () => {
+    const botones = document.querySelectorAll<HTMLButtonElement>('.filtro-btn');
+    const cards = document.querySelectorAll<HTMLElement>('.patron-card');
+    const activo = ['border-primary-container/40', 'bg-primary-container/15', 'text-primary'];
+    const inactivo = ['border-surface-container-high', 'bg-surface-container-low', 'text-on-surface-variant'];
+
+    const filtrar = (btn: HTMLButtonElement) => {
+      const filtro = btn.dataset.filtro;
+      botones.forEach((b) => {
+        const esActivo = b === btn;
+        b.classList.remove(...(esActivo ? inactivo : activo));
+        b.classList.add(...(esActivo ? activo : inactivo));
+        b.setAttribute('aria-pressed', String(esActivo));
+      });
+      cards.forEach((c) => {
+        c.style.display = filtro === 'todos' || c.dataset.categoria === filtro ? '' : 'none';
+      });
+    };
+
+    botones.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        if (document.startViewTransition) document.startViewTransition(() => filtrar(btn));
+        else filtrar(btn);
+      });
+    });
+  });
+</script>

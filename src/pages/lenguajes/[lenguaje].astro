@@ -1,0 +1,208 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+import BloqueCodigo from '../../components/BloqueCodigo.astro';
+import { PATTERNS, CATEGORIAS } from '../../data/patterns';
+import { LENGUAJES, ejemplo, nombreArchivo, type Lenguaje } from '../../data/lenguajes';
+
+export function getStaticPaths() {
+  return LENGUAJES.map((l) => ({ params: { lenguaje: l.id }, props: { lenguaje: l } }));
+}
+
+interface Props {
+  lenguaje: Lenguaje;
+}
+
+const { lenguaje } = Astro.props;
+const patrones = [...PATTERNS].sort((a, b) => a.order - b.order).map((p) => ({ ...p, ejemplo: ejemplo(lenguaje, p.slug, 'es') }));
+const color = {
+  creacionales: { texto: 'text-primary-container', punto: 'bg-primary-container' },
+  estructurales: { texto: 'text-tertiary-fixed-dim', punto: 'bg-tertiary-fixed-dim' },
+  comportamiento: { texto: 'text-secondary-container', punto: 'bg-secondary-container' },
+};
+---
+
+<Layout title={`Patrones de diseño en ${lenguaje.nombre} · Arquetipo`}>
+  <Navbar />
+
+  <main class="w-full bg-background min-h-screen">
+    <div class="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-10 py-8 flex flex-col gap-8">
+
+      <!-- Encabezado compacto -->
+      <header class="flex flex-col gap-3">
+        <nav class="flex items-center gap-2 font-telemetry text-xs text-on-surface-variant" aria-label="Ruta">
+          <a href="/" class="hover:text-primary">Inicio</a>
+          <span>/</span>
+          <a href="/#lenguajes" class="hover:text-primary">Lenguajes</a>
+          <span>/</span>
+          <span class="text-amber-300">{lenguaje.nombre}</span>
+        </nav>
+        <h1 class="font-headline text-3xl sm:text-4xl font-bold text-primary">
+          Los 23 patrones en <span transition:name={`lenguaje-${lenguaje.id}`} class="inline-block">{lenguaje.nombre}</span>
+        </h1>
+        <p class="font-body text-base text-slate-300 max-w-4xl leading-relaxed">
+          El mismo caso real de cada patrón, escrito como lo haría alguien que domina {lenguaje.nombre}.
+          Son programas completos que se compilan y se ejecutan; los comentarios del final muestran lo que imprimen.
+        </p>
+        <div class="flex flex-wrap gap-2">
+          {lenguaje.rasgos.map((r) => (
+            <span class="px-2.5 py-0.5 rounded-full bg-surface-container-low border border-surface-container-high font-telemetry text-[11px] text-slate-300">{r.es}</span>
+          ))}
+        </div>
+      </header>
+
+      <!-- Selector para pantallas pequeñas -->
+      <label class="lg:hidden flex flex-col gap-1.5">
+        <span class="font-badge text-[10px] uppercase tracking-wider text-on-surface-variant">Patrón</span>
+        <select id="selector-patron" class="w-full px-3 py-2.5 rounded-lg bg-surface-container-low border border-surface-container-high font-code text-sm text-primary">
+          {CATEGORIAS.map((c) => (
+            <optgroup label={c.label}>
+              {patrones.filter((p) => p.category === c.id).map((p) => <option value={p.slug}>{p.name}</option>)}
+            </optgroup>
+          ))}
+        </select>
+      </label>
+
+      <div class="grid grid-cols-1 lg:grid-cols-[250px_minmax(0,1fr)] gap-8 items-start">
+        <!-- Lista fija de patrones -->
+        <aside class="hidden lg:block sticky top-24 max-h-[calc(100vh-7.5rem)] overflow-y-auto pr-1 -mr-1" aria-label="Patrones">
+          <nav class="flex flex-col gap-5">
+            {CATEGORIAS.map((c) => (
+              <div class="flex flex-col gap-1">
+                <span class={`px-3 font-badge text-[10px] uppercase tracking-wider font-bold ${color[c.id].texto}`}>{c.label}</span>
+                {patrones.filter((p) => p.category === c.id).map((p) => (
+                  <a href={`#${p.slug}`} data-ir-patron={p.slug}
+                    class="enlace-patron flex items-center gap-2 px-3 py-1.5 rounded-lg font-code text-[13px] text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors">
+                    <span class={`w-1.5 h-1.5 rounded-full opacity-0 transition-opacity ${color[p.category].punto}`}></span>{p.name}
+                  </a>
+                ))}
+              </div>
+            ))}
+          </nav>
+        </aside>
+
+        <!-- Un patrón a la vez -->
+        <div id="detalle-patron" class="scroll-mt-24 min-w-0">
+          {patrones.map((p, i) => {
+            const anterior = patrones[i - 1];
+            const siguiente = patrones[i + 1];
+            return (
+              <article data-panel-patron={p.slug} hidden={i !== 0} class="flex flex-col gap-4">
+                <div class="flex items-end justify-between flex-wrap gap-3">
+                  <div class="flex flex-col gap-1">
+                    <span class={`font-badge text-[10px] uppercase tracking-wider font-bold ${color[p.category].texto}`}>{p.categoryLabel} · {i + 1} de {patrones.length}</span>
+                    <h2 class="font-headline text-3xl font-bold text-primary">{p.name}</h2>
+                    <p class="font-body text-sm text-slate-300 italic">“{p.problema}”</p>
+                  </div>
+                  <a href={`/patrones/${p.category}/${p.slug}`} class="font-badge text-[11px] uppercase tracking-wider text-primary-container hover:text-primary-fixed">
+                    Ver la explicación →
+                  </a>
+                </div>
+
+                {<BloqueCodigo lenguaje={lenguaje} archivo={nombreArchivo(lenguaje, p.slug)} ejemplo={p.ejemplo} />}
+
+                <nav class="grid grid-cols-2 gap-3 pt-2" aria-label="Patrón anterior y siguiente">
+                  {anterior ? (
+                    <a href={`#${anterior.slug}`} data-ir-patron={anterior.slug} class="p-3 rounded-xl bg-surface-container-low border border-surface-container-high hover:border-primary-container/40 transition-colors flex flex-col">
+                      <span class="font-telemetry text-[11px] text-on-surface-variant">← Anterior</span>
+                      <span class="font-code text-sm font-bold text-primary">{anterior.name}</span>
+                    </a>
+                  ) : <span></span>}
+                  {siguiente && (
+                    <a href={`#${siguiente.slug}`} data-ir-patron={siguiente.slug} class="p-3 rounded-xl bg-surface-container-low border border-surface-container-high hover:border-primary-container/40 transition-colors flex flex-col items-end text-right">
+                      <span class="font-telemetry text-[11px] text-on-surface-variant">Siguiente →</span>
+                      <span class="font-code text-sm font-bold text-primary">{siguiente.name}</span>
+                    </a>
+                  )}
+                </nav>
+              </article>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+    <Footer />
+  </main>
+</Layout>
+
+<style>
+  .enlace-patron[aria-current='true'] {
+    color: var(--color-primary);
+    background-color: var(--color-surface-container-high);
+  }
+  .enlace-patron[aria-current='true'] > span {
+    opacity: 1;
+  }
+  /* Animación del cambio de patrón: el detalle se desliza un poco y se desvanece */
+  #detalle-patron {
+    view-transition-name: detalle-patron;
+  }
+  ::view-transition-old(detalle-patron) {
+    animation: 160ms ease-in both salir-detalle;
+  }
+  ::view-transition-new(detalle-patron) {
+    animation: 220ms ease-out both entrar-detalle;
+  }
+  @keyframes salir-detalle {
+    to { opacity: 0; transform: translateY(-6px); }
+  }
+  @keyframes entrar-detalle {
+    from { opacity: 0; transform: translateY(10px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-old(detalle-patron),
+    ::view-transition-new(detalle-patron) {
+      animation: none;
+    }
+  }
+</style>
+
+<script>
+  // Muestra un patrón a la vez. El patrón activo queda en la URL (#slug) para poder compartirlo.
+  let mostrarDesdeUrl: (() => void) | null = null;
+
+  // Un único listener: reacciona si el usuario cambia el # a mano o pega un enlace en la misma pestaña
+  window.addEventListener('hashchange', () => mostrarDesdeUrl?.());
+
+  document.addEventListener('astro:page-load', () => {
+    const paneles = [...document.querySelectorAll<HTMLElement>('[data-panel-patron]')];
+    mostrarDesdeUrl = null;
+    if (!paneles.length) return;
+    const enlaces = document.querySelectorAll<HTMLAnchorElement>('[data-ir-patron]');
+    const selector = document.querySelector<HTMLSelectElement>('#selector-patron');
+    const detalle = document.querySelector<HTMLElement>('#detalle-patron');
+
+    const mostrar = (slug: string, animar: boolean) => {
+      const destino = paneles.find((p) => p.dataset.panelPatron === slug) ?? paneles[0];
+      const actual = destino.dataset.panelPatron!;
+      const aplicar = () => {
+        paneles.forEach((p) => { p.hidden = p !== destino; });
+        enlaces.forEach((a) => {
+          if (a.classList.contains('enlace-patron')) a.setAttribute('aria-current', String(a.dataset.irPatron === actual));
+        });
+        if (selector) selector.value = actual;
+      };
+      if (animar && document.startViewTransition) document.startViewTransition(aplicar);
+      else aplicar();
+    };
+
+    const ir = (slug: string) => {
+      history.replaceState(history.state, '', `#${slug}`);
+      mostrar(slug, true);
+      // Si el usuario estaba más abajo (por ejemplo, al pulsar "Siguiente"), vuelve al inicio del detalle
+      if (detalle && detalle.getBoundingClientRect().top < 0) detalle.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    enlaces.forEach((a) => {
+      a.addEventListener('click', (evento) => {
+        evento.preventDefault();
+        ir(a.dataset.irPatron!);
+      });
+    });
+    selector?.addEventListener('change', () => ir(selector.value));
+
+    mostrarDesdeUrl = () => mostrar(decodeURIComponent(location.hash.slice(1)), true);
+    mostrar(decodeURIComponent(location.hash.slice(1)), false);
+  });
+</script>

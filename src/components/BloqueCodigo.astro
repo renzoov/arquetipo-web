@@ -1,0 +1,91 @@
+---
+// Muestra un ejemplo de código completo con su nota "lo idiomático", un botón para copiarlo y,
+// si es largo, plegado a una altura máxima con un botón "Ver completo".
+import { codeToHtml } from 'shiki';
+import type { EjemploCodigo, Lenguaje } from '../data/lenguajes';
+
+interface Props {
+  lenguaje: Lenguaje;
+  archivo: string;
+  ejemplo: EjemploCodigo;
+}
+
+const { lenguaje, archivo, ejemplo } = Astro.props;
+const html = await codeToHtml(ejemplo.codigo, { lang: lenguaje.shiki, theme: 'tokyo-night' });
+const lineas = ejemplo.codigo.split('\n').length;
+const plegable = lineas > 30;
+
+// La nota es texto plano con fragmentos de código entre acentos graves: se escapa y se resalta.
+const escapar = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const notaHtml = escapar(ejemplo.nota).replace(/`([^`]+)`/g, '<code class="font-code text-[0.85em] text-amber-200">$1</code>');
+---
+
+<div class="flex flex-col gap-3">
+  {ejemplo.nota && (
+    <p class="px-4 py-3 rounded-lg bg-amber-400/5 border border-amber-400/20 font-body text-sm text-slate-200 leading-relaxed">
+      <span class="font-telemetry text-xs font-bold text-amber-300">LO IDIOMÁTICO EN {lenguaje.nombre.toUpperCase()}:</span> <Fragment set:html={notaHtml} />
+    </p>
+  )}
+  <div class="bloque rounded-xl border border-surface-container-high overflow-hidden bg-[#0b0e15]" data-plegado={plegable ? 'true' : undefined}>
+    <div class="flex items-center justify-between px-4 py-2 border-b border-surface-container-high bg-surface-container-low">
+      <span class="font-code text-xs text-on-surface-variant">{archivo} · {lineas} líneas</span>
+      <button type="button" class="boton-copiar flex items-center gap-1 font-telemetry text-[11px] text-on-surface-variant hover:text-primary transition-colors" data-codigo={ejemplo.codigo}>
+        <span class="material-symbols-outlined text-[15px]">content_copy</span><span class="texto">Copiar</span>
+      </button>
+    </div>
+    <div class="relative">
+      <div class="bloque-codigo" set:html={html}></div>
+      {plegable && (
+        <div class="pliegue absolute inset-x-0 bottom-0 pt-16 pb-3 flex justify-center bg-gradient-to-t from-[#0b0e15] via-[#0b0e15]/90 to-transparent">
+          <button type="button" class="boton-desplegar flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-surface-container-high border border-surface-container-highest font-body text-xs text-primary hover:bg-surface-variant transition-colors">
+            <span class="material-symbols-outlined text-[16px]">unfold_more</span>Ver completo ({lineas} líneas)
+          </button>
+        </div>
+      )}
+    </div>
+  </div>
+</div>
+
+<style is:global>
+  .bloque-codigo pre.shiki {
+    margin: 0 !important;
+    padding: 1.15rem !important;
+    font-family: var(--font-code) !important;
+    font-size: 0.85rem !important;
+    line-height: 1.65 !important;
+    overflow-x: auto !important;
+    background-color: #0b0e15 !important;
+    tab-size: 4;
+  }
+  /* Plegado: unas 26 líneas visibles */
+  .bloque[data-plegado='true'] .bloque-codigo {
+    max-height: 30rem;
+    overflow: hidden;
+  }
+  .bloque:not([data-plegado='true']) .pliegue {
+    display: none;
+  }
+</style>
+
+<script>
+  document.addEventListener('astro:page-load', () => {
+    document.querySelectorAll<HTMLButtonElement>('.boton-copiar').forEach((boton) => {
+      boton.addEventListener('click', async () => {
+        const texto = boton.querySelector('.texto');
+        try {
+          await navigator.clipboard.writeText(boton.dataset.codigo ?? '');
+          if (texto) texto.textContent = 'Copiado';
+        } catch {
+          if (texto) texto.textContent = 'No se pudo copiar';
+        }
+        setTimeout(() => { if (texto) texto.textContent = 'Copiar'; }, 1800);
+      });
+    });
+
+    document.querySelectorAll<HTMLButtonElement>('.boton-desplegar').forEach((boton) => {
+      boton.addEventListener('click', () => {
+        boton.closest('.bloque')?.removeAttribute('data-plegado');
+      });
+    });
+  });
+</script>

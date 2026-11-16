@@ -1,0 +1,279 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+import { codeToHtml } from 'shiki';
+
+const ts = (code: string) => codeToHtml(code, { lang: 'typescript', theme: 'tokyo-night' });
+
+const principios = [
+  {
+    id: 'srp', letra: 'S', siglas: 'SRP', ingles: 'Single Responsibility Principle', nombre: 'Responsabilidad Única',
+    lema: 'Un solo motivo para cambiar',
+    color: 'text-secondary-container', fondo: 'bg-secondary-container/20 border-secondary-container/30',
+    definicion: 'Una clase debe tener un único motivo para cambiar. En la práctica, eso significa que debe responder ante un solo actor: una persona, un área o un rol del negocio que pide cambios sobre ella.',
+    sintoma: 'Una misma clase valida datos, escribe SQL y envía correos. Cuando marketing pide cambiar el texto del correo de bienvenida, alguien toca la clase y rompe sin querer la validación que pidió el área legal.',
+    practica: 'SRP no significa "una clase, un método". UsuarioServicio todavía coordina tres pasos, pero su único motivo para cambiar es el flujo de registro; los detalles de validar, guardar y avisar cambian en sus propias clases.',
+    antes: `// ❌ Mezcla reglas de negocio, persistencia y envío de correos
+export class UsuarioServicio {
+  async registrar(datos: DatosUsuario) {
+    if (!datos.email.includes('@')) throw new Error('Email inválido');      // validación
+    await db.query('INSERT INTO usuarios (email) VALUES (?)', [datos.email]); // SQL
+    await smtp.enviar(datos.email, '¡Bienvenido!');                          // correo
+  }
+}`,
+    despues: `// ✅ Cada detalle cambia en su propia clase
+export class UsuarioServicio {
+  constructor(
+    private readonly validador: ValidadorUsuario,
+    private readonly repositorio: RepositorioUsuarios,
+    private readonly bienvenida: NotificadorBienvenida,
+  ) {}
+
+  async registrar(datos: DatosUsuario) {
+    this.validador.validar(datos);
+    const usuario = await this.repositorio.guardar(datos);
+    await this.bienvenida.enviar(usuario);
+  }
+}`,
+  },
+  {
+    id: 'ocp', letra: 'O', siglas: 'OCP', ingles: 'Open/Closed Principle', nombre: 'Abierto / Cerrado',
+    lema: 'Extender sin modificar',
+    color: 'text-secondary-container', fondo: 'bg-secondary-container/20 border-secondary-container/30',
+    definicion: 'El código debe estar abierto a la extensión y cerrado a la modificación: para añadir comportamiento nuevo, escribes código nuevo en lugar de cambiar el que ya funciona y está probado.',
+    sintoma: 'Cada vez que el negocio agrega un medio de pago, alguien abre la función de cobro y añade otro else if. Cada cambio vuelve a poner en riesgo los medios que ya funcionaban.',
+    practica: 'Ningún código está cerrado a todos los cambios. OCP se aplica sobre los ejes de cambio que conoces o que se repiten (aquí, los medios de pago), no sobre cualquier posibilidad imaginable.',
+    antes: `// ❌ Cada medio de pago nuevo modifica esta función
+export function cobrar(medio: string, monto: number) {
+  if (medio === 'tarjeta') {
+    /* llamadas a la pasarela de tarjetas */
+  } else if (medio === 'billetera') {
+    /* llamadas a la billetera digital */
+  } else if (medio === 'transferencia') {
+    /* generar orden de transferencia */
+  }
+}`,
+    despues: `// ✅ Un medio nuevo es una clase nueva que se registra
+export interface MedioPago {
+  cobrar(monto: number): Promise<void>;
+}
+
+export class ProcesadorPagos {
+  private medios = new Map<string, MedioPago>();
+
+  registrar(nombre: string, medio: MedioPago) { this.medios.set(nombre, medio); }
+
+  cobrar(nombre: string, monto: number) {
+    const medio = this.medios.get(nombre);
+    if (!medio) throw new Error('Medio de pago no disponible');
+    return medio.cobrar(monto);
+  }
+}
+
+procesador.registrar('billetera', new PagoBilletera()); // sin tocar ProcesadorPagos`,
+  },
+  {
+    id: 'lsp', letra: 'L', siglas: 'LSP', ingles: 'Liskov Substitution Principle', nombre: 'Sustitución de Liskov',
+    lema: 'Las subclases cumplen el contrato',
+    color: 'text-amber-300', fondo: 'bg-amber-500/20 border-amber-500/30',
+    definicion: 'Si S es un subtipo de T, cualquier código que funcione con un T debe seguir funcionando correctamente si recibe un S. Una subclase no puede exigir más (precondiciones más estrictas), garantizar menos (postcondiciones más débiles), romper las reglas que la clase base siempre mantiene (sus invariantes, como "el saldo nunca es negativo") ni lanzar errores que la clase base no anuncia.',
+    sintoma: 'Subclases que sobrescriben un método para lanzar "operación no soportada" o para no hacer nada. El código que usa la clase base empieza a llenarse de if (cuenta instanceof CuentaPlazoFijo).',
+    practica: 'La pregunta no es "¿es un?" en el mundo real, sino "¿se comporta como?" en el código. Un depósito a plazo fijo es una cuenta, pero no se comporta como una cuenta de la que se puede retirar en cualquier momento.',
+    antes: `// ❌ La subclase rompe lo que promete la clase base
+export class Cuenta {
+  protected saldo = 0;
+  retirar(monto: number): void { this.saldo -= monto; }
+}
+
+export class CuentaPlazoFijo extends Cuenta {
+  retirar(monto: number): void {
+    // Quien usa una Cuenta espera poder retirar
+    throw new Error('No se puede retirar antes del vencimiento');
+  }
+}`,
+    despues: `// ✅ Cada tipo promete solo lo que puede cumplir
+export interface Cuenta {
+  saldo(): number;
+}
+
+export interface CuentaConRetiros extends Cuenta {
+  retirar(monto: number): void;
+}
+
+export class CuentaAhorro implements CuentaConRetiros { /* saldo y retirar */ }
+export class CuentaPlazoFijo implements Cuenta { /* solo saldo */ }
+
+// Solo acepta cuentas que de verdad permiten retirar
+function pagarConCuenta(cuenta: CuentaConRetiros, monto: number) {
+  cuenta.retirar(monto);
+}`,
+  },
+  {
+    id: 'isp', letra: 'I', siglas: 'ISP', ingles: 'Interface Segregation Principle', nombre: 'Segregación de Interfaces',
+    lema: 'Interfaces pequeñas y por rol',
+    color: 'text-primary-container', fondo: 'bg-primary-container/20 border-primary-container/30',
+    definicion: 'Ningún cliente debería verse obligado a depender de métodos que no usa. Es mejor tener varias interfaces pequeñas, pensadas para cada tipo de cliente, que una interfaz grande que lo abarca todo.',
+    sintoma: 'Una interfaz con muchos métodos obliga a sus implementaciones a dejar métodos vacíos o lanzar errores, y cualquier cambio en un método que no usas te obliga a recompilar o a revisar tu código.',
+    practica: 'ISP se piensa desde quien usa la interfaz, no desde quien la implementa: cada cliente declara la interfaz que necesita. Una misma clase puede implementar varias.',
+    antes: `// ❌ El archivo histórico es de solo lectura, pero la interfaz lo obliga a todo
+export interface AlmacenDocumentos {
+  leer(id: string): Promise<Documento>;
+  guardar(doc: Documento): Promise<void>;
+  eliminar(id: string): Promise<void>;
+  generarMiniatura(id: string): Promise<Buffer>;
+}
+
+export class ArchivoHistorico implements AlmacenDocumentos {
+  leer(id: string) { return this.desdeCintaDeRespaldo(id); }
+  guardar(): Promise<void> { throw new Error('Solo lectura'); }    // forzado
+  eliminar(): Promise<void> { throw new Error('Solo lectura'); }   // forzado
+  generarMiniatura(): Promise<Buffer> { throw new Error('No soportado'); }
+}`,
+    despues: `// ✅ Interfaces por rol: cada cliente depende solo de lo que usa
+export interface LectorDocumentos {
+  leer(id: string): Promise<Documento>;
+}
+
+export interface EscritorDocumentos {
+  guardar(doc: Documento): Promise<void>;
+  eliminar(id: string): Promise<void>;
+}
+
+export class ArchivoHistorico implements LectorDocumentos {
+  leer(id: string) { return this.desdeCintaDeRespaldo(id); }
+}
+
+export class AlmacenNube implements LectorDocumentos, EscritorDocumentos { /* ... */ }
+
+// El visor solo necesita leer: acepta cualquiera de los dos
+export class VisorDocumentos {
+  constructor(private readonly lector: LectorDocumentos) {}
+}`,
+  },
+  {
+    id: 'dip', letra: 'D', siglas: 'DIP', ingles: 'Dependency Inversion Principle', nombre: 'Inversión de Dependencias',
+    lema: 'Depender de abstracciones',
+    color: 'text-tertiary-fixed-dim', fondo: 'bg-tertiary-fixed-dim/20 border-tertiary-fixed-dim/30',
+    definicion: 'Los módulos de alto nivel (las reglas del negocio) no deben depender de los módulos de bajo nivel (base de datos, frameworks, servicios externos); ambos deben depender de abstracciones. Además, las abstracciones no deben depender de los detalles: los detalles dependen de las abstracciones.',
+    sintoma: 'El caso de uso crea su propio driver de MySQL con las credenciales dentro. No se puede probar sin una base de datos real, y cambiar de motor obliga a reescribir la lógica de negocio.',
+    practica: 'No hay que confundir tres ideas: DIP es el principio (de qué dependes); la inyección de dependencias es una técnica para cumplirlo (recibir las dependencias desde fuera); y un contenedor IoC es una herramienta que automatiza esa inyección. Puedes cumplir DIP sin ningún contenedor.',
+    antes: `// ❌ La lógica de negocio depende del detalle de infraestructura
+export class EmitirFactura {
+  private db = new MySQLDriver('localhost', 'root', 'secreto'); // acoplamiento directo
+
+  async ejecutar(factura: Factura) {
+    await this.db.insert('facturas', factura);
+  }
+}`,
+    despues: `// ✅ El negocio define la abstracción que necesita (el "puerto")
+export interface RepositorioFacturas {
+  guardar(factura: Factura): Promise<void>;
+}
+
+export class EmitirFactura {
+  constructor(private readonly repositorio: RepositorioFacturas) {}
+
+  async ejecutar(factura: Factura) {
+    await this.repositorio.guardar(factura);
+  }
+}
+
+// La infraestructura implementa la abstracción del negocio
+export class RepositorioFacturasMySQL implements RepositorioFacturas { /* ... */ }
+
+// En las pruebas se usa una implementación en memoria
+new EmitirFactura(new RepositorioFacturasEnMemoria());`,
+  },
+];
+
+const bloques = await Promise.all(
+  principios.map(async (p) => ({ ...p, htmlAntes: await ts(p.antes), htmlDespues: await ts(p.despues) })),
+);
+---
+
+<Layout title="Principios SOLID · Arquetipo">
+  <Navbar />
+
+  <main class="w-full bg-background min-h-screen">
+    <div class="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-10 py-8 flex flex-col gap-12">
+
+      <!-- Encabezado -->
+      <header class="flex flex-col gap-4">
+        <nav class="flex items-center gap-2 font-telemetry text-xs text-on-surface-variant" aria-label="Ruta">
+          <a href="/" class="hover:text-primary">Inicio</a>
+          <span>/</span>
+          <span class="text-primary-container">Principios SOLID</span>
+        </nav>
+        <span class="font-badge text-[10px] text-primary-container uppercase tracking-widest">Paso 03 de la ruta</span>
+        <h1 class="font-headline text-4xl sm:text-5xl font-bold text-primary">Los 5 <span transition:name="titulo-solid" class="inline-block">principios SOLID</span></h1>
+        <p class="font-body text-lg text-slate-200 max-w-4xl leading-relaxed">
+          Cinco principios de diseño orientado a objetos que ayudan a escribir código fácil de cambiar, de probar y de entender.
+          No son leyes: son guías para tomar decisiones. Cada uno incluye un diagrama, el síntoma que te avisa de que lo estás incumpliendo
+          y el código antes y después.
+        </p>
+        <nav class="flex flex-wrap gap-2 pt-1" aria-label="Principios">
+          {principios.map((p) => (
+            <a href={`#${p.id}`} class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container-low border border-surface-container-high hover:border-primary-container/40 font-body text-sm text-slate-200 transition-colors">
+              <span class={`font-headline font-bold ${p.color}`}>{p.letra}</span>{p.nombre}
+            </a>
+          ))}
+        </nav>
+      </header>
+
+      {bloques.map((p) => (
+        <article id={p.id} class="scroll-mt-24 p-6 lg:p-8 rounded-xl bg-surface-container-lowest/90 border border-surface-container-high flex flex-col gap-6">
+          <div class="flex items-center justify-between flex-wrap gap-3 pb-4 border-b border-surface-container-high">
+            <div class="flex items-center gap-3">
+              <span class={`w-11 h-11 rounded-lg border font-headline text-xl font-bold flex items-center justify-center ${p.fondo} ${p.color}`}>{p.letra}</span>
+              <div>
+                <h2 class="font-headline text-2xl text-primary font-bold">{p.nombre}</h2>
+                <span class="font-telemetry text-xs text-on-surface-variant">{p.ingles} ({p.siglas})</span>
+              </div>
+            </div>
+            <span class={`font-badge text-xs px-2.5 py-1 rounded bg-surface-container-high font-bold uppercase ${p.color}`}>{p.lema}</span>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 font-body text-[15px] text-slate-200 leading-relaxed">
+            <p><strong class="text-primary">Qué dice.</strong> {p.definicion}</p>
+            <p><strong class="text-amber-300">Cómo reconocer que lo incumples.</strong> {p.sintoma}</p>
+          </div>
+
+          <div class="rounded-xl overflow-hidden border border-surface-container-high bg-[#0b0e15]">
+            <iframe
+              src={`/diagrams/solid-${p.id}.class.html`}
+              title={`Diagrama de clases del principio ${p.nombre}`}
+              class="w-full h-[760px] border-0 archify-frame block"
+              scrolling="no"
+            ></iframe>
+          </div>
+
+          <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+            <div>
+              <span class="font-badge text-xs text-amber-300 font-bold uppercase mb-2 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px]">cancel</span>Antes: lo incumple
+              </span>
+              <div class="shiki-wrapper" set:html={p.htmlAntes}></div>
+            </div>
+            <div>
+              <span class="font-badge text-xs text-secondary-container font-bold uppercase mb-2 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px]">check_circle</span>Después: lo cumple
+              </span>
+              <div class="shiki-wrapper" set:html={p.htmlDespues}></div>
+            </div>
+          </div>
+
+          <p class="p-4 rounded-lg bg-primary-container/5 border border-primary-container/20 font-body text-sm text-slate-200 leading-relaxed">
+            <span class="text-primary-container font-bold">En la práctica:</span> {p.practica}
+          </p>
+        </article>
+      ))}
+
+      <a href="/#patrones" class="self-end inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary-container text-on-primary font-body text-sm font-semibold hover:bg-primary transition-colors">
+        Siguiente paso: los 23 patrones <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+      </a>
+    </div>
+    <Footer />
+  </main>
+</Layout>
+

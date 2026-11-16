@@ -1,0 +1,32 @@
+---
+// Logo de Arquetipo: tres clases conectadas (como en un diagrama UML) que forman una "A".
+// Los colores son los de las tres familias de patrones: creacionales, comportamiento y estructurales.
+interface Props {
+  size?: number;
+  class?: string;
+}
+const { size = 36, class: className = '' } = Astro.props;
+---
+
+<svg
+  width={size}
+  height={size}
+  viewBox="0 0 64 64"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+  class={className}
+  role="img"
+  aria-label="Arquetipo"
+>
+  <rect x="1.5" y="1.5" width="61" height="61" rx="15" fill="#0b0e15" stroke="#00f0ff" stroke-opacity="0.35" stroke-width="2"></rect>
+  <!-- Relaciones entre clases: forman la "A" -->
+  <path d="M32 22 L18 41 M32 22 L46 41" stroke="#849495" stroke-width="2.6" stroke-linecap="round"></path>
+  <path d="M24 33 H40" stroke="#849495" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="1 4.2"></path>
+  <!-- Clases -->
+  <rect x="24" y="11" width="16" height="12" rx="3" fill="#00f0ff"></rect>
+  <rect x="24" y="15.5" width="16" height="1.6" fill="#0b0e15" fill-opacity="0.55"></rect>
+  <rect x="9" y="40" width="16" height="12" rx="3" fill="#00fe66"></rect>
+  <rect x="9" y="44.5" width="16" height="1.6" fill="#0b0e15" fill-opacity="0.55"></rect>
+  <rect x="39" y="40" width="16" height="12" rx="3" fill="#ecb2ff"></rect>
+  <rect x="39" y="44.5" width="16" height="1.6" fill="#0b0e15" fill-opacity="0.55"></rect>
+</svg>

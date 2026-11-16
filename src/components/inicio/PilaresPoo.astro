@@ -1,0 +1,33 @@
+---
+const pilares = [
+  { nombre: 'Encapsulamiento', idea: 'El objeto protege su estado: nadie lo cambia sin pasar por sus reglas.', icono: 'lock', color: 'text-secondary-container', fondo: 'bg-secondary-container/15' },
+  { nombre: 'Abstracción', idea: 'Modelar solo lo esencial de algo y ocultar los detalles que no importan a quien lo usa.', icono: 'schema', color: 'text-primary-container', fondo: 'bg-primary-container/15' },
+  { nombre: 'Herencia', idea: 'Una clase reutiliza y especializa a otra. Es útil, pero crea un acoplamiento fuerte.', icono: 'account_tree', color: 'text-tertiary-fixed-dim', fondo: 'bg-tertiary-fixed-dim/15' },
+  { nombre: 'Polimorfismo', idea: 'El mismo mensaje produce una respuesta distinta según el objeto que lo recibe.', icono: 'swap_horiz', color: 'text-secondary-container', fondo: 'bg-secondary-container/15' },
+];
+---
+
+<section id="poo" class="scroll-mt-24 flex flex-col gap-5">
+  <div class="flex items-end justify-between flex-wrap gap-3">
+    <div>
+      <span class="font-badge text-[10px] text-secondary-container uppercase tracking-widest">Paso 01</span>
+      <h2 class="font-headline text-2xl font-bold uppercase text-primary mt-1">Los 4 pilares de la POO</h2>
+    </div>
+    <a href="/fundamentos/poo" class="font-badge text-[11px] uppercase tracking-wider text-secondary-container hover:text-secondary-fixed">Ver guía completa →</a>
+  </div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    {pilares.map((p) => (
+      <a href="/fundamentos/poo" class="p-5 rounded-xl bg-surface-container-lowest/90 border border-surface-container-high hover:border-secondary-container/40 transition-all flex flex-col gap-3">
+        <span class={`w-10 h-10 rounded-lg flex items-center justify-center ${p.fondo} ${p.color}`}>
+          <span class="material-symbols-outlined text-[22px]">{p.icono}</span>
+        </span>
+        <h3 class="font-code text-sm font-bold text-slate-100">{p.nombre}</h3>
+        <p class="font-body text-xs text-slate-300 leading-relaxed">{p.idea}</p>
+      </a>
+    ))}
+  </div>
+  <p class="font-body text-sm text-slate-300 px-4 py-3 rounded-lg bg-primary-container/5 border border-primary-container/20">
+    <span class="font-telemetry text-xs text-primary-container font-bold">REGLA PRÁCTICA:</span>
+    prefiere la composición a la herencia cuando solo quieres reutilizar código.
+  </p>
+</section>

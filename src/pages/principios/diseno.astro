@@ -1,0 +1,262 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+import { PATTERNS } from '../../data/patterns';
+import { codeToHtml } from 'shiki';
+
+const ts = (code: string) => codeToHtml(code, { lang: 'typescript', theme: 'tokyo-night' });
+
+const enlacePatron = (slug: string) => {
+  const p = PATTERNS.find((x) => x.slug === slug);
+  if (!p) throw new Error(`Patrón desconocido: ${slug}`);
+  return { nombre: p.name, href: `/patrones/${p.category}/${p.slug}` };
+};
+
+const principios = [
+  {
+    id: 'encapsular', icono: 'swap_horiz', nombre: 'Encapsula lo que varía',
+    lema: 'Separa lo que cambia de lo estable',
+    color: 'text-secondary-container', fondo: 'bg-secondary-container/20 border-secondary-container/30',
+    definicion: 'Identifica qué partes de tu código cambian con frecuencia y sácalas a su propio lugar, detrás de una forma estable de usarlas. Así, cuando cambien (y van a cambiar), el resto del sistema ni se entera.',
+    sintoma: 'Cada campaña comercial obliga a abrir la función que cierra las ventas del mes para tocar la tabla de comisiones. Un cambio de porcentajes termina rompiendo el redondeo del total, que no tenía nada que ver.',
+    practica: 'Es el principio detrás de casi todos los patrones: cada uno aísla un tipo de variación distinto (qué objeto se crea, qué algoritmo se usa, qué estado está activo...). Pregúntate siempre: "¿qué va a cambiar aquí y con qué frecuencia?".',
+    patrones: ['strategy', 'state', 'factory-method', 'template-method'],
+    antes: `// ❌ La regla que cambia cada campaña vive dentro del cierre de mes
+export function cerrarMes(ventas: Venta[]) {
+  let comisiones = 0;
+  for (const venta of ventas) {
+    // Marketing cambia estos números cada trimestre
+    if (venta.monto > 10_000) comisiones += venta.monto * 0.05;
+    else if (venta.categoria === 'servicios') comisiones += venta.monto * 0.08;
+    else comisiones += venta.monto * 0.03;
+  }
+  return { total: sumar(ventas), comisiones: redondear(comisiones) };
+}`,
+    despues: `// ✅ La regla variable tiene su propio lugar
+export interface ReglaComision {
+  calcular(venta: Venta): number;
+}
+
+export function cerrarMes(ventas: Venta[], regla: ReglaComision) {
+  const comisiones = ventas.reduce((acc, v) => acc + regla.calcular(v), 0);
+  return { total: sumar(ventas), comisiones: redondear(comisiones) };
+}
+
+// Cada campaña es una regla nueva; el cierre de mes no se toca
+export const reglaVerano: ReglaComision = {
+  calcular: (v) => v.monto * (v.categoria === 'servicios' ? 0.1 : 0.04),
+};`,
+  },
+  {
+    id: 'interfaces', icono: 'cable', nombre: 'Programa contra interfaces, no contra implementaciones',
+    lema: 'Depende de lo que hace, no de quién lo hace',
+    color: 'text-primary-container', fondo: 'bg-primary-container/20 border-primary-container/30',
+    definicion: 'Declara tus variables, parámetros y dependencias usando el tipo más general que te sirva (una interfaz o una clase base), no una clase concreta. "Interfaz" aquí significa el contrato: qué operaciones ofrece algo, sin importar cómo las implementa.',
+    sintoma: 'El servicio de adjuntos recibe un ClienteS3 y usa métodos propios de ese SDK. Para guardar en disco local durante las pruebas, o migrar a otro proveedor, hay que reescribir el servicio.',
+    practica: 'No hace falta crear una interfaz por cada clase. Úsalo donde esperas más de una implementación o donde quieres probar con un sustituto. Es la base práctica del principio de inversión de dependencias (la D de SOLID).',
+    patrones: ['adapter', 'bridge', 'proxy', 'abstract-factory'],
+    antes: `// ❌ Atado a un proveedor concreto
+export class ServicioAdjuntos {
+  constructor(private readonly s3: ClienteS3) {}
+
+  async adjuntar(ticketId: string, archivo: Archivo) {
+    await this.s3.putObject({ Bucket: 'tickets', Key: ticketId, Body: archivo.datos });
+  }
+}`,
+    despues: `// ✅ Atado solo a lo que necesita: guardar un archivo
+export interface AlmacenArchivos {
+  guardar(ruta: string, datos: Uint8Array): Promise<void>;
+}
+
+export class ServicioAdjuntos {
+  constructor(private readonly almacen: AlmacenArchivos) {}
+
+  async adjuntar(ticketId: string, archivo: Archivo) {
+    await this.almacen.guardar(\`tickets/\${ticketId}\`, archivo.datos);
+  }
+}
+
+// En producción: new AlmacenS3(...). En pruebas: new AlmacenEnMemoria().`,
+  },
+  {
+    id: 'composicion', icono: 'extension', nombre: 'Prefiere la composición sobre la herencia',
+    lema: 'Arma comportamientos, no árboles de clases',
+    color: 'text-tertiary-fixed-dim', fondo: 'bg-tertiary-fixed-dim/20 border-tertiary-fixed-dim/30',
+    definicion: 'En lugar de obtener comportamiento heredándolo de una clase padre, obtenlo teniendo otros objetos que lo hacen (y delegando en ellos). La herencia fija las combinaciones al compilar; la composición permite combinarlas libremente, incluso en tiempo de ejecución.',
+    sintoma: 'Aparecen clases como ReportePdfFirmado, ReporteExcelFirmado, ReportePdfFirmadoComprimido... Cada nueva opción multiplica las subclases, y un cambio en la clase base afecta a todas a la vez.',
+    practica: 'La herencia sigue siendo válida cuando hay una relación "es un" estable y la subclase cumple todo el contrato de la base. El problema aparece cuando la usas solo para reutilizar código o para combinar opciones independientes.',
+    patrones: ['decorator', 'strategy', 'bridge', 'composite'],
+    antes: `// ❌ Una subclase por cada combinación de opciones
+class Reporte { /* ... */ }
+class ReportePdf extends Reporte { /* ... */ }
+class ReportePdfFirmado extends ReportePdf { /* ... */ }
+class ReporteExcel extends Reporte { /* ... */ }
+class ReporteExcelFirmado extends ReporteExcel { /* ... */ }
+// ¿Y si además hay que comprimir? Duplica todo otra vez.`,
+    despues: `// ✅ Cada opción es una pieza que se combina
+export interface Formato { generar(datos: Fila[]): Uint8Array; }
+export interface PasoFinal { aplicar(archivo: Uint8Array): Uint8Array; }
+
+export class Reporte {
+  constructor(
+    private readonly formato: Formato,
+    private readonly pasos: PasoFinal[] = [],
+  ) {}
+
+  exportar(datos: Fila[]) {
+    return this.pasos.reduce((archivo, paso) => paso.aplicar(archivo), this.formato.generar(datos));
+  }
+}
+
+new Reporte(new FormatoPdf(), [new Firma(certificado), new Compresion()]);`,
+  },
+  {
+    id: 'acoplamiento', icono: 'link_off', nombre: 'Busca un acoplamiento débil',
+    lema: 'Que los objetos sepan poco unos de otros',
+    color: 'text-amber-300', fondo: 'bg-amber-500/20 border-amber-500/30',
+    definicion: 'Dos objetos que colaboran deberían conocer lo mínimo el uno del otro: qué pueden pedirse, no cómo funcionan por dentro. Cuanto menos sabe un objeto de otro, menos le afectan sus cambios.',
+    sintoma: 'Para registrar una devolución, el módulo de inventario llama directamente a la contabilidad, al servicio de correo y al panel de métricas. Agregar un cuarto interesado obliga a modificar inventario, y una caída del correo bloquea las devoluciones.',
+    practica: 'Acoplamiento débil no es cero acoplamiento: algo tiene que conectar las piezas. La idea es que esa conexión pase por contratos pequeños y estables (una interfaz, un evento) y no por los detalles internos de cada módulo.',
+    patrones: ['observer', 'mediator', 'facade', 'chain-of-responsibility'],
+    antes: `// ❌ Inventario conoce a todos los que reaccionan a una devolución
+export class Inventario {
+  registrarDevolucion(item: Item) {
+    this.stock.sumar(item);
+    new Contabilidad().emitirNotaCredito(item);
+    new ServicioCorreo().avisarCliente(item.pedidoId);
+    new PanelMetricas().incrementar('devoluciones');
+  }
+}`,
+    despues: `// ✅ Inventario solo anuncia lo que pasó
+export class Inventario {
+  constructor(private readonly eventos: BusEventos) {}
+
+  registrarDevolucion(item: Item) {
+    this.stock.sumar(item);
+    this.eventos.publicar({ tipo: 'devolucion-registrada', item });
+  }
+}
+
+// Cada interesado se suscribe por su cuenta, sin tocar Inventario
+eventos.suscribir('devolucion-registrada', (e) => contabilidad.emitirNotaCredito(e.item));`,
+  },
+  {
+    id: 'demeter', icono: 'forum', nombre: 'Principio del menor conocimiento',
+    lema: 'Habla solo con tus vecinos cercanos',
+    color: 'text-secondary-container', fondo: 'bg-secondary-container/20 border-secondary-container/30',
+    definicion: 'También llamado Ley de Demeter. Un método solo debería llamar a métodos de su propio objeto, de los parámetros que recibe, de los objetos que crea y de sus atributos directos. No debería "atravesar" objetos para llegar a los objetos de otros.',
+    sintoma: 'Cadenas como pedido.cliente.direccion.distrito.zonaReparto. Si cambia cómo se guarda la dirección, se rompen decenas de lugares que no tenían nada que ver con direcciones.',
+    practica: 'No se trata de contar puntos: encadenar métodos de un mismo objeto (un builder, un array con map y filter) no lo incumple. Lo que evita es depender de la estructura interna de objetos ajenos. La solución es pedirle al objeto que tienes que haga el trabajo, o que te dé directamente lo que necesitas.',
+    patrones: ['facade', 'mediator', 'iterator'],
+    antes: `// ❌ El despacho conoce cómo está armado el pedido por dentro
+export function asignarRepartidor(pedido: Pedido) {
+  const zona = pedido.cliente.direccion.distrito.zonaReparto;
+  return repartidores.disponiblesEn(zona);
+}`,
+    despues: `// ✅ Se le pregunta al pedido lo que se necesita
+export class Pedido {
+  constructor(private readonly cliente: Cliente) {}
+
+  zonaReparto(): Zona {
+    return this.cliente.zonaReparto(); // y Cliente delega en su dirección
+  }
+}
+
+export function asignarRepartidor(pedido: Pedido) {
+  return repartidores.disponiblesEn(pedido.zonaReparto());
+}`,
+  },
+];
+
+const bloques = await Promise.all(
+  principios.map(async (p) => ({
+    ...p,
+    enlaces: p.patrones.map(enlacePatron),
+    htmlAntes: await ts(p.antes),
+    htmlDespues: await ts(p.despues),
+  })),
+);
+---
+
+<Layout title="Principios de diseño · Arquetipo">
+  <Navbar />
+
+  <main class="w-full bg-background min-h-screen">
+    <div class="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-10 py-8 flex flex-col gap-12">
+
+      <!-- Encabezado -->
+      <header class="flex flex-col gap-4">
+        <nav class="flex items-center gap-2 font-telemetry text-xs text-on-surface-variant" aria-label="Ruta">
+          <a href="/" class="hover:text-primary">Inicio</a>
+          <span>/</span>
+          <span class="text-primary-container">Principios de diseño</span>
+        </nav>
+        <span class="font-badge text-[10px] text-secondary-container uppercase tracking-widest">Paso 02 de la ruta</span>
+        <h1 class="font-headline text-4xl sm:text-5xl font-bold text-primary"><span transition:name="titulo-diseno" class="inline-block">Principios de diseño</span></h1>
+        <p class="font-body text-lg text-slate-200 max-w-4xl leading-relaxed">
+          Antes de SOLID y de los patrones hay cinco ideas simples que aparecen una y otra vez. Si las entiendes, los patrones dejan de
+          parecer recetas para memorizar: verás que cada uno es una forma concreta de aplicar estas ideas a un problema que se repite.
+        </p>
+        <nav class="flex flex-wrap gap-2 pt-1" aria-label="Principios">
+          {principios.map((p) => (
+            <a href={`#${p.id}`} class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container-low border border-surface-container-high hover:border-primary-container/40 font-body text-sm text-slate-200 transition-colors">
+              <span class={`material-symbols-outlined text-[17px] ${p.color}`}>{p.icono}</span>{p.nombre}
+            </a>
+          ))}
+        </nav>
+      </header>
+
+      {bloques.map((p) => (
+        <article id={p.id} class="scroll-mt-24 p-6 lg:p-8 rounded-xl bg-surface-container-lowest/90 border border-surface-container-high flex flex-col gap-6">
+          <div class="flex items-center justify-between flex-wrap gap-3 pb-4 border-b border-surface-container-high">
+            <div class="flex items-center gap-3">
+              <span class={`w-11 h-11 rounded-lg border flex items-center justify-center shrink-0 ${p.fondo} ${p.color}`}>
+                <span class="material-symbols-outlined text-[24px]">{p.icono}</span>
+              </span>
+              <h2 class="font-headline text-2xl text-primary font-bold">{p.nombre}</h2>
+            </div>
+            <span class={`font-badge text-xs px-2.5 py-1 rounded bg-surface-container-high font-bold uppercase ${p.color}`}>{p.lema}</span>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 font-body text-[15px] text-slate-200 leading-relaxed">
+            <p><strong class="text-primary">Qué dice.</strong> {p.definicion}</p>
+            <p><strong class="text-amber-300">Cómo reconocer que lo incumples.</strong> {p.sintoma}</p>
+          </div>
+
+          <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+            <div>
+              <span class="font-badge text-xs text-amber-300 font-bold uppercase mb-2 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px]">cancel</span>Antes: lo incumple
+              </span>
+              <div class="shiki-wrapper" set:html={p.htmlAntes}></div>
+            </div>
+            <div>
+              <span class="font-badge text-xs text-secondary-container font-bold uppercase mb-2 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px]">check_circle</span>Después: lo cumple
+              </span>
+              <div class="shiki-wrapper" set:html={p.htmlDespues}></div>
+            </div>
+          </div>
+
+          <p class="p-4 rounded-lg bg-primary-container/5 border border-primary-container/20 font-body text-sm text-slate-200 leading-relaxed">
+            <span class="text-primary-container font-bold">En la práctica:</span> {p.practica}
+          </p>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="font-badge text-[11px] text-on-surface-variant uppercase tracking-wider mr-1">Lo verás en</span>
+            {p.enlaces.map((e) => (
+              <a href={e.href} class="px-3 py-1 rounded-full bg-surface-container-low border border-surface-container-high hover:border-primary-container/40 font-code text-xs text-slate-200 transition-colors">{e.nombre}</a>
+            ))}
+          </div>
+        </article>
+      ))}
+
+      <a href="/principios/solid" class="self-end inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary-container text-on-primary font-body text-sm font-semibold hover:bg-primary transition-colors">
+        Siguiente paso: principios SOLID <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+      </a>
+    </div>
+    <Footer />
+  </main>
+</Layout>
+

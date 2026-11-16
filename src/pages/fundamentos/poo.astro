@@ -1,0 +1,332 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+import { codeToHtml } from 'shiki';
+
+const ts = (code: string) => codeToHtml(code, { lang: 'typescript', theme: 'tokyo-night' });
+
+// ── Los 4 pilares ──
+const codigoAbstraccion = await ts(`// El modelo esencial: para la aplicación, "almacenar" es
+// subir un archivo y obtener su URL. Nada más.
+export interface Almacenamiento {
+  subir(nombre: string, contenido: Buffer): Promise<string>;
+  urlDe(id: string): string;
+}
+
+// Quien lo usa trabaja con esa idea simple, no con los detalles
+// (regiones, firmas, reintentos) de un proveedor concreto.
+export class GestorComprobantes {
+  constructor(private readonly almacenamiento: Almacenamiento) {}
+
+  guardar(nombre: string, pdf: Buffer): Promise<string> {
+    return this.almacenamiento.subir(nombre, pdf);
+  }
+}`);
+
+const codigoEncapsulamiento = await ts(`export class CuentaBancaria {
+  // Estado privado: nadie desde fuera puede cambiar el saldo a su antojo
+  private saldo: number;
+  private movimientos: { fecha: Date; monto: number }[] = [];
+
+  constructor(saldoInicial: number) {
+    if (saldoInicial < 0) throw new Error('El saldo inicial no puede ser negativo.');
+    this.saldo = saldoInicial;
+  }
+
+  // La única forma de modificar el saldo pasa por las reglas del negocio
+  retirar(monto: number): void {
+    if (monto <= 0) throw new Error('El monto debe ser positivo.');
+    if (monto > this.saldo) throw new Error('Fondos insuficientes.');
+    this.saldo -= monto;
+    this.movimientos.push({ fecha: new Date(), monto: -monto });
+  }
+
+  obtenerSaldo(): number {
+    return this.saldo; // se puede leer, no escribir
+  }
+}`);
+
+const codigoHerencia = await ts(`// Clase base con lo común a todos los notificadores
+export abstract class Notificador {
+  protected formatear(titulo: string, cuerpo: string): string {
+    return '[' + new Date().toISOString() + '] ' + titulo.toUpperCase() + ': ' + cuerpo;
+  }
+
+  abstract enviar(destino: string, mensaje: string): Promise<void>;
+}
+
+// La subclase reutiliza el formato y especializa el envío
+export class NotificadorSlack extends Notificador {
+  constructor(private readonly webhookUrl: string) {
+    super();
+  }
+
+  async enviar(canal: string, texto: string): Promise<void> {
+    const cuerpo = this.formatear('Alerta del sistema', texto);
+    await fetch(this.webhookUrl, { method: 'POST', body: JSON.stringify({ canal, cuerpo }) });
+  }
+}`);
+
+const codigoPolimorfismo = await ts(`export interface MedioDePago {
+  cobrar(monto: number): Promise<void>;
+}
+
+export class PagoTarjeta implements MedioDePago {
+  async cobrar(monto: number) { /* autoriza con la pasarela de tarjetas */ }
+}
+
+export class PagoSaldo implements MedioDePago {
+  async cobrar(monto: number) { /* descuenta del saldo a favor del cliente */ }
+}
+
+// Pago dividido: cada parte se cobra con su propio medio.
+// El mismo mensaje (cobrar) y cada objeto responde a su manera.
+export async function cobrarPedido(partes: { medio: MedioDePago; monto: number }[]) {
+  for (const { medio, monto } of partes) {
+    await medio.cobrar(monto);
+  }
+}
+
+await cobrarPedido([
+  { medio: new PagoTarjeta(), monto: 70 },
+  { medio: new PagoSaldo(), monto: 30 },
+]);`);
+
+// ── Las 4 relaciones ──
+const codigoDependencia = await ts(`export class GeneradorFactura {
+  // Dependencia: la calculadora llega como parámetro y solo se usa aquí
+  emitir(items: Item[], pais: string, calculadora: CalculadoraImpuestos): Factura {
+    const subtotal = items.reduce((total, i) => total + i.precio, 0);
+    return new Factura(subtotal * (1 + calculadora.tasaPara(pais)));
+  }
+}`);
+
+const codigoAsociacion = await ts(`export class CuentaUsuario {
+  // Asociación: guarda una referencia al perfil, pero ambos viven por separado
+  constructor(private readonly perfil: PerfilPublico) {}
+
+  actualizarBiografia(texto: string): void {
+    // Le pide al perfil que cambie; no toca sus datos directamente
+    this.perfil.cambiarBiografia(texto);
+  }
+}`);
+
+const codigoAgregacion = await ts(`export class EquipoDesarrollo {
+  // Agregación: los ingenieros existen antes que el equipo
+  // y siguen existiendo si el equipo se disuelve
+  constructor(private readonly integrantes: Ingeniero[]) {}
+
+  habilidades(): string[] {
+    return this.integrantes.flatMap((i) => i.habilidades);
+  }
+}`);
+
+const codigoComposicion = await ts(`export class OrdenCompra {
+  // Composición: la orden crea y es dueña de sus líneas.
+  // Las líneas no tienen sentido fuera de su orden.
+  private readonly lineas: LineaOrden[] = [];
+
+  agregarProducto(productoId: string, cantidad: number, precio: number): void {
+    this.lineas.push(new LineaOrden(productoId, cantidad, precio));
+  }
+}`);
+
+const relaciones = [
+  {
+    nombre: 'Dependencia', subtitulo: 'Uso temporal', uml: 'Línea discontinua con flecha abierta ( - - -> )', etiqueta: 'Acoplamiento más débil',
+    texto: 'La clase A usa a la clase B solo durante una operación: B llega como parámetro o se crea dentro de un método. Cuando el método termina, A ya no guarda ninguna referencia a B.',
+    codigo: codigoDependencia, destacado: false,
+  },
+  {
+    nombre: 'Asociación', subtitulo: 'Conocimiento sostenido', uml: 'Línea continua; la flecha (opcional) indica quién conoce a quién', etiqueta: 'Referencia guardada',
+    texto: 'La clase A guarda una referencia a la clase B como atributo y colabora con ella durante su vida. Cada objeto existe de forma independiente.',
+    codigo: codigoAsociacion, destacado: false,
+  },
+  {
+    nombre: 'Agregación', subtitulo: 'Todo-parte débil', uml: 'Línea con rombo hueco en el lado del todo ( ◇— )', etiqueta: 'Partes independientes',
+    texto: 'Un tipo especial de asociación "todo-parte": el todo agrupa partes que pueden existir sin él. Suelen llegar desde fuera, por ejemplo por el constructor.',
+    codigo: codigoAgregacion, destacado: false,
+  },
+  {
+    nombre: 'Composición', subtitulo: 'Todo-parte fuerte', uml: 'Línea con rombo relleno en el lado del todo ( ◆— )', etiqueta: 'Dueño del ciclo de vida',
+    texto: 'El todo crea sus partes y es responsable de ellas. Las partes no se comparten y no tienen sentido fuera del todo: si el todo desaparece, ellas también.',
+    codigo: codigoComposicion, destacado: true,
+  },
+];
+---
+
+<Layout title="Fundamentos de POO · Arquetipo">
+  <Navbar />
+
+  <main class="w-full bg-background min-h-screen">
+    <div class="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-10 py-8 flex flex-col gap-12">
+
+      <!-- Encabezado -->
+      <header class="flex flex-col gap-4">
+        <nav class="flex items-center gap-2 font-telemetry text-xs text-on-surface-variant" aria-label="Ruta">
+          <a href="/" class="hover:text-primary">Inicio</a>
+          <span>/</span>
+          <span class="text-secondary-container">Fundamentos de POO</span>
+        </nav>
+        <span class="font-badge text-[10px] text-secondary-container uppercase tracking-widest">Paso 01 de la ruta</span>
+        <h1 transition:name="titulo-poo" class="font-headline text-4xl sm:text-5xl font-bold text-primary w-fit">Fundamentos de POO</h1>
+        <p class="font-body text-lg text-slate-200 max-w-4xl leading-relaxed">
+          Los patrones de diseño están hechos con las piezas básicas de la programación orientada a objetos:
+          cuatro pilares que definen cómo se construye un objeto y cuatro relaciones que definen cómo colaboran entre sí.
+          Si estas piezas están claras, los patrones se entienden mucho más rápido.
+        </p>
+      </header>
+
+      <!-- Diagrama de los 4 pilares -->
+      <section class="flex flex-col gap-3">
+        <h2 class="font-headline text-2xl font-bold uppercase text-primary flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary-container">schema</span>Los 4 pilares en un diagrama
+        </h2>
+        <div class="rounded-xl overflow-hidden border border-surface-container-high bg-[#0b0e15]">
+          <iframe
+            src="/diagrams/poo-pilares.class.html"
+            title="Diagrama de clases de los 4 pilares de la POO"
+            class="w-full h-[760px] border-0 archify-frame block"
+            scrolling="no"
+          ></iframe>
+        </div>
+      </section>
+
+      <!-- 1. Los 4 pilares -->
+      <section class="flex flex-col gap-6">
+        <h2 class="font-headline text-2xl font-bold uppercase text-primary flex items-center gap-2 border-b border-surface-container-high pb-2">
+          <span class="material-symbols-outlined text-secondary-container">account_tree</span>1. Los cuatro pilares
+        </h2>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Abstracción -->
+          <article id="abstraccion" class="p-6 rounded-xl bg-surface-container-lowest/90 border border-surface-container-high flex flex-col gap-4">
+            <div class="flex items-center justify-between">
+              <span class="font-badge text-xs px-2.5 py-1 rounded bg-primary-container/15 text-primary-container font-bold border border-primary-container/30">PILAR 01</span>
+              <span class="font-telemetry text-xs text-on-surface-variant">Quedarse con lo esencial</span>
+            </div>
+            <h3 class="font-headline text-2xl text-primary font-bold">Abstracción</h3>
+            <p class="font-body text-[15px] text-slate-200 leading-relaxed">
+              Abstraer es <strong>modelar solo lo que importa</strong> de un concepto para el problema que resuelves y dejar fuera el resto.
+              Un "almacenamiento", para tu aplicación, es algo que guarda un archivo y devuelve una URL; cómo lo hace un proveedor concreto es un detalle.
+              Las clases abstractas y las interfaces son las herramientas con las que se expresa esa idea en el código.
+            </p>
+            <div class="shiki-wrapper" set:html={codigoAbstraccion}></div>
+            <p class="p-4 rounded-lg bg-surface-container-low border border-surface-container-high font-body text-sm text-slate-200 leading-relaxed">
+              <span class="text-primary-container font-bold block mb-1">Por qué importa</span>
+              GestorComprobantes no sabe nada del proveedor. Si mañana cambias de proveedor de almacenamiento, solo escribes otra implementación de <code class="font-code text-primary-container">Almacenamiento</code>.
+            </p>
+          </article>
+
+          <!-- Encapsulamiento -->
+          <article id="encapsulamiento" class="p-6 rounded-xl bg-surface-container-lowest/90 border border-surface-container-high flex flex-col gap-4">
+            <div class="flex items-center justify-between">
+              <span class="font-badge text-xs px-2.5 py-1 rounded bg-secondary-container/15 text-secondary-container font-bold border border-secondary-container/30">PILAR 02</span>
+              <span class="font-telemetry text-xs text-on-surface-variant">Proteger el estado</span>
+            </div>
+            <h3 class="font-headline text-2xl text-primary font-bold">Encapsulamiento</h3>
+            <p class="font-body text-[15px] text-slate-200 leading-relaxed">
+              Reúne los datos y las operaciones que los modifican dentro del mismo objeto y <strong>oculta los datos</strong> para que solo se puedan cambiar a través de esas operaciones.
+              Así el objeto garantiza sus reglas (invariantes): por ejemplo, que el saldo nunca sea negativo.
+            </p>
+            <div class="shiki-wrapper" set:html={codigoEncapsulamiento}></div>
+            <p class="p-4 rounded-lg bg-surface-container-low border border-surface-container-high font-body text-sm text-slate-200 leading-relaxed">
+              <span class="text-secondary-container font-bold block mb-1">Qué pasa sin él</span>
+              Si el saldo fuera público, cualquier parte del código podría dejarlo en negativo o cambiarlo sin registrar el movimiento, y nadie sabría desde dónde ocurrió.
+            </p>
+          </article>
+
+          <!-- Herencia -->
+          <article id="herencia" class="p-6 rounded-xl bg-surface-container-lowest/90 border border-surface-container-high flex flex-col gap-4">
+            <div class="flex items-center justify-between">
+              <span class="font-badge text-xs px-2.5 py-1 rounded bg-tertiary-fixed-dim/15 text-tertiary-fixed-dim font-bold border border-tertiary-fixed-dim/30">PILAR 03</span>
+              <span class="font-telemetry text-xs text-on-surface-variant">Especializar</span>
+            </div>
+            <h3 class="font-headline text-2xl text-primary font-bold">Herencia</h3>
+            <p class="font-body text-[15px] text-slate-200 leading-relaxed">
+              Una clase hija <strong>reutiliza y especializa</strong> el comportamiento de una clase base. Es útil, pero crea uno de los acoplamientos más fuertes que existen:
+              la hija depende de los detalles de la base, y un cambio en la base puede romper a todas sus hijas.
+            </p>
+            <div class="shiki-wrapper" set:html={codigoHerencia}></div>
+            <p class="p-4 rounded-lg bg-surface-container-low border border-amber-500/30 font-body text-sm text-slate-200 leading-relaxed">
+              <span class="text-amber-300 font-bold block mb-1">Regla práctica</span>
+              Usa herencia cuando la hija realmente "es un" caso particular de la base y puede usarse en su lugar sin sorpresas (principio de Liskov). Si solo quieres reutilizar código, prefiere la composición.
+            </p>
+          </article>
+
+          <!-- Polimorfismo -->
+          <article id="polimorfismo" class="p-6 rounded-xl bg-surface-container-lowest/90 border border-surface-container-high flex flex-col gap-4">
+            <div class="flex items-center justify-between">
+              <span class="font-badge text-xs px-2.5 py-1 rounded bg-primary-container/15 text-primary-container font-bold border border-primary-container/30">PILAR 04</span>
+              <span class="font-telemetry text-xs text-on-surface-variant">Un mensaje, muchas respuestas</span>
+            </div>
+            <h3 class="font-headline text-2xl text-primary font-bold">Polimorfismo</h3>
+            <p class="font-body text-[15px] text-slate-200 leading-relaxed">
+              Permite enviar <strong>el mismo mensaje</strong> a objetos de clases distintas y que cada uno responda con su propia implementación.
+              Quien envía el mensaje no necesita saber la clase concreta: solo que el objeto cumple el contrato.
+            </p>
+            <div class="shiki-wrapper" set:html={codigoPolimorfismo}></div>
+            <p class="p-4 rounded-lg bg-surface-container-low border border-surface-container-high font-body text-sm text-slate-200 leading-relaxed">
+              <span class="text-secondary-container font-bold block mb-1">La base de muchos patrones</span>
+              Strategy, State, Command o Composite se apoyan en el polimorfismo. Es lo que permite reemplazar los <code class="font-code text-amber-300">switch</code> sobre el tipo de objeto por una sola llamada.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <!-- Diagrama de relaciones -->
+      <section class="flex flex-col gap-3">
+        <h2 class="font-headline text-2xl font-bold uppercase text-primary flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary-container">hub</span>Las relaciones en un diagrama UML
+        </h2>
+        <div class="rounded-xl overflow-hidden border border-surface-container-high bg-[#0b0e15]">
+          <iframe
+            src="/diagrams/poo-relaciones.class.html"
+            title="Diagrama de clases de las relaciones entre objetos"
+            class="w-full h-[760px] border-0 archify-frame block"
+            scrolling="no"
+          ></iframe>
+        </div>
+      </section>
+
+      <!-- 2. Las 4 relaciones -->
+      <section class="flex flex-col gap-6">
+        <div class="flex items-center justify-between flex-wrap gap-2 border-b border-surface-container-high pb-2">
+          <h2 class="font-headline text-2xl font-bold uppercase text-primary flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary-container">hub</span>2. Las cuatro relaciones entre clases
+          </h2>
+          <span class="font-telemetry text-xs text-secondary-container">De menor a mayor acoplamiento</span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {relaciones.map((r, i) => (
+            <article class={`p-6 rounded-xl bg-surface-container-lowest/90 border flex flex-col gap-4 ${r.destacado ? 'border-secondary-container/40' : 'border-surface-container-high'}`}>
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <h3 class={`font-headline text-xl font-bold ${r.destacado ? 'text-secondary-container' : 'text-primary'}`}>{i + 1}. {r.nombre} <span class="font-body text-base font-normal text-on-surface-variant">· {r.subtitulo}</span></h3>
+                  <span class="font-telemetry text-xs text-on-surface-variant">UML: {r.uml}</span>
+                </div>
+                <span class="font-badge text-[10px] px-2 py-1 rounded bg-surface-container-high text-primary font-bold shrink-0 uppercase">{r.etiqueta}</span>
+              </div>
+              <p class="font-body text-[15px] text-slate-200 leading-relaxed">{r.texto}</p>
+              <div class="shiki-wrapper" set:html={r.codigo}></div>
+            </article>
+          ))}
+        </div>
+
+        <p class="p-4 rounded-lg bg-primary-container/5 border border-primary-container/20 font-body text-sm text-slate-200 leading-relaxed">
+          <span class="text-primary-container font-bold">Además:</span>
+          UML también representa la <strong>generalización</strong> (herencia, línea continua con triángulo hueco) y la <strong>realización</strong>
+          (una clase implementa una interfaz, línea discontinua con triángulo hueco). Las verás en los diagramas de casi todos los patrones.
+        </p>
+      </section>
+
+      <a href="/principios/diseno" class="self-end inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary-container text-on-primary font-body text-sm font-semibold hover:bg-primary transition-colors">
+        Siguiente paso: principios de diseño <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+      </a>
+    </div>
+    <Footer />
+  </main>
+</Layout>
+

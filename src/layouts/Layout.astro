@@ -1,23 +1,99 @@
+---
+import '../styles/global.css';
+import { ClientRouter } from 'astro:transitions';
+
+interface Props {
+	title?: string;
+	description?: string;
+}
+
+const {
+	title = 'Arquetipo · Patrones de diseño de software',
+	description = 'Guía gratuita de POO, principios de diseño, SOLID y los 23 patrones de diseño clásicos, con casos reales, diagramas y código en 8 lenguajes.',
+} = Astro.props;
+---
+
 <!doctype html>
-<html lang="en">
+<html class="dark" lang="es">
 	<head>
 		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
+		<title>{title}</title>
+		<meta name="description" content={description} />
+
+		<!-- Preconnect fonts -->
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+		<!-- Google Fonts: Space Grotesk, Geist, JetBrains Mono -->
+		<link
+			href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+			rel="stylesheet"
+		/>
+
+		<!-- Google Material Symbols Outlined -->
+		<link
+			href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+			rel="stylesheet"
+		/>
+
+		<!-- Transiciones animadas entre páginas (View Transitions) -->
+		<ClientRouter />
 	</head>
-	<body>
+	<body class="bg-background text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container">
 		<slot />
+
+		<script>
+			// Ajusta el alto de cada diagrama de Archify (iframe) a su contenido real,
+			// para que no salga cortado ni deje espacio vacío al final.
+			function fitFrame(frame: HTMLIFrameElement) {
+				const doc = frame.contentDocument;
+				const win = frame.contentWindow;
+				if (!doc || !win || !doc.body) return;
+				const content = doc.querySelector('.container') ?? doc.body;
+				// Fondo del último elemento visible (ignora rellenos internos de Archify).
+				let bottom = 0;
+				for (const child of Array.from(content.children)) {
+					const rect = child.getBoundingClientRect();
+					if (rect.height > 0) bottom = Math.max(bottom, rect.bottom);
+				}
+				if (!bottom) bottom = content.getBoundingClientRect().bottom;
+				// Mismo margen abajo que el relleno superior del diagrama.
+				const margin = parseFloat(win.getComputedStyle(doc.body).paddingTop) || 20;
+				const height = Math.ceil(bottom + win.scrollY + margin);
+				if (height <= 0) return;
+
+				// Protección anti-parpadeo: ignora cambios mínimos y, si el alto
+				// empieza a oscilar entre dos valores, se queda con el mayor.
+				const current = parseFloat(frame.style.height) || 0;
+				if (Math.abs(height - current) <= 2) return;
+				const previous = parseFloat(frame.dataset.prevHeight || '0');
+				const next = Math.abs(height - previous) <= 2 ? Math.max(height, current) : height;
+				frame.dataset.prevHeight = String(current);
+				if (next !== current) frame.style.height = `${next}px`;
+			}
+
+			function watchFrame(frame: HTMLIFrameElement) {
+				const setup = () => {
+					fitFrame(frame);
+					const doc = frame.contentDocument;
+					const target = doc?.querySelector('.container') ?? doc?.body;
+					if (target && 'ResizeObserver' in window) {
+						new ResizeObserver(() => fitFrame(frame)).observe(target);
+					}
+					// Las fuentes del diagrama pueden cambiar el alto al terminar de cargar.
+					doc?.fonts?.ready.then(() => fitFrame(frame));
+				};
+				frame.addEventListener('load', setup);
+				if (frame.contentDocument?.readyState === 'complete' && frame.contentDocument.URL !== 'about:blank') setup();
+			}
+
+			// Con View Transitions el script se carga una sola vez: se reaplica en cada navegación.
+			document.addEventListener('astro:page-load', () => {
+				document.querySelectorAll<HTMLIFrameElement>('iframe.archify-frame').forEach(watchFrame);
+			});
+		</script>
 	</body>
 </html>
-
-<style>
-	html,
-	body {
-		margin: 0;
-		width: 100%;
-		height: 100%;
-	}
-</style>

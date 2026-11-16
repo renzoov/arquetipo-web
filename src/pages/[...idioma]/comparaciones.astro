@@ -1,0 +1,130 @@
+---
+// Patrones que se confunden: pares de patrones con estructura parecida, sus diferencias
+// en una tabla y un mismo caso resuelto con cada uno.
+import Layout from '../../layouts/Layout.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+import { idiomaDe, ruta, t, type Idioma } from '../../i18n/idiomas';
+import { COMPARACIONES, ENCABEZADO } from '../../contenido/comparaciones';
+import { COLOR_CATEGORIA, nombrePatron, rutaPatron } from '../../data/catalogo';
+import { PATTERNS } from '../../data/patterns';
+import { resaltarTs } from '../../lib/codigo';
+
+export function getStaticPaths() {
+  // Por ahora solo en español; la versión en inglés se activa con el resto del sitio bilingüe.
+  return [{ params: { idioma: undefined } }];
+}
+
+const idioma: Idioma = idiomaDe(Astro.params.idioma);
+const e = Object.fromEntries(Object.entries(ENCABEZADO).map(([k, v]) => [k, t(v, idioma)])) as Record<keyof typeof ENCABEZADO, string>;
+
+const colorDe = (slug: string) => COLOR_CATEGORIA[PATTERNS.find((p) => p.slug === slug)!.category];
+const titulo = (patrones: string[]) => patrones.map(nombrePatron).join(' vs ');
+
+const comparaciones = await Promise.all(
+  COMPARACIONES.map(async (c) => ({
+    ...c,
+    titulo: titulo(c.patrones),
+    soluciones: await Promise.all(c.soluciones.map(async (s) => ({ ...s, html: await resaltarTs(s.codigo, idioma) }))),
+  })),
+);
+---
+
+<Layout title={`${e.titulo} · Arquetipo`} description={e.descripcion}>
+  <Navbar />
+
+  <main class="w-full bg-background min-h-screen">
+    <div class="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-10 py-8 flex flex-col gap-12">
+
+      <!-- Encabezado -->
+      <header class="flex flex-col gap-4">
+        <nav class="flex items-center gap-2 font-telemetry text-xs text-on-surface-variant" aria-label="Ruta">
+          <a href={ruta(idioma, '/')} class="hover:text-primary">Inicio</a>
+          <span>/</span>
+          <span class="text-primary-container">{e.titulo}</span>
+        </nav>
+        <h1 class="font-headline text-4xl sm:text-5xl font-bold text-primary">{e.titulo}</h1>
+        <p class="font-body text-lg text-slate-200 max-w-4xl leading-relaxed">{e.intro}</p>
+        <nav class="flex flex-wrap gap-2 pt-1" aria-label={e.titulo}>
+          {comparaciones.map((c) => (
+            <a href={`#${c.id}`} class="px-3 py-1.5 rounded-full bg-surface-container-low border border-surface-container-high hover:border-primary-container/40 font-code text-xs text-slate-200 transition-colors">
+              {c.titulo}
+            </a>
+          ))}
+        </nav>
+      </header>
+
+      {comparaciones.map((c) => (
+        <article id={c.id} class="scroll-mt-24 p-6 lg:p-8 rounded-xl bg-surface-container-lowest/90 border border-surface-container-high flex flex-col gap-6">
+          <!-- Título: un enlace por patrón -->
+          <div class="flex flex-col gap-3 pb-4 border-b border-surface-container-high">
+            <h2 class="font-headline text-2xl sm:text-3xl font-bold flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              {c.patrones.map((slug, i) => (
+                <>
+                  {i > 0 && <span class="font-telemetry text-base text-on-surface-variant">vs</span>}
+                  <a href={ruta(idioma, rutaPatron(slug))} class={`${colorDe(slug).texto} hover:underline underline-offset-4`}>{nombrePatron(slug)}</a>
+                </>
+              ))}
+            </h2>
+            <p class="font-body text-base text-slate-200 leading-relaxed max-w-4xl">{t(c.idea, idioma)}</p>
+          </div>
+
+          <!-- El caso -->
+          <div class="p-4 rounded-lg bg-surface-container-low border-l-2 border-primary-container/60 flex flex-col gap-1.5">
+            <span class="font-badge text-xs uppercase tracking-wider text-primary-container font-bold flex items-center gap-2">
+              <span class="material-symbols-outlined text-[18px]">work</span>{e.elCaso}
+            </span>
+            <p class="font-body text-[15px] text-slate-200 leading-relaxed">{t(c.caso, idioma)}</p>
+          </div>
+
+          <!-- Tabla de diferencias -->
+          <div class="flex flex-col gap-3">
+            <h3 class="font-badge text-xs uppercase tracking-wider text-tertiary-fixed-dim font-bold flex items-center gap-2">
+              <span class="material-symbols-outlined text-[18px]">table_chart</span>{e.diferencias}
+            </h3>
+            <div class="overflow-x-auto rounded-lg border border-surface-container-high">
+              <table class="w-full min-w-[640px] text-left font-body text-sm">
+                <thead class="bg-surface-container-low">
+                  <tr>
+                    <th scope="col" class="px-4 py-3 font-badge text-[11px] uppercase tracking-wider text-on-surface-variant w-[22%]">{e.aspecto}</th>
+                    {c.patrones.map((slug) => (
+                      <th scope="col" class={`px-4 py-3 font-code text-sm font-bold ${colorDe(slug).texto}`}>{nombrePatron(slug)}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {c.filas.map((fila) => (
+                    <tr class="border-t border-surface-container-high align-top">
+                      <th scope="row" class="px-4 py-3 font-semibold text-slate-100">{t(fila.aspecto, idioma)}</th>
+                      {fila.valores.map((v) => <td class="px-4 py-3 text-slate-300 leading-relaxed">{t(v, idioma)}</td>)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- El mismo caso, resuelto con cada patrón -->
+          <div class={`grid grid-cols-1 gap-5 ${c.soluciones.length === 3 ? '2xl:grid-cols-3' : 'xl:grid-cols-2'}`}>
+            {c.soluciones.map((s) => (
+              <div class={`flex flex-col rounded-xl border ${colorDe(s.patron).borde} bg-surface-container-low overflow-hidden`}>
+                <div class="px-4 py-3 border-b border-surface-container-high flex flex-col gap-1.5">
+                  <span class={`font-badge text-[11px] uppercase font-bold ${colorDe(s.patron).texto}`}>{e.resuelto} {nombrePatron(s.patron)}</span>
+                  <p class="font-body text-sm text-slate-200 leading-relaxed">{t(s.explicacion, idioma)}</p>
+                </div>
+                <div class="shiki-wrapper shiki-plano flex-1" set:html={s.html}></div>
+              </div>
+            ))}
+          </div>
+
+          <!-- La pregunta para decidir -->
+          <p class="p-4 rounded-lg bg-primary-container/5 border border-primary-container/20 font-body text-sm text-slate-200 leading-relaxed flex gap-3">
+            <span class="material-symbols-outlined text-primary-container text-[22px] shrink-0">help</span>
+            <span><strong class="text-primary-container">{e.pregunta}:</strong> {t(c.pregunta, idioma)}</span>
+          </p>
+        </article>
+      ))}
+    </div>
+    <Footer />
+  </main>
+</Layout>
