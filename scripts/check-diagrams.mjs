@@ -1,4 +1,5 @@
-// Verifica que los diagramas de Archify (iframes) se vean completos, sin cortes.
+// Verifica que los diagramas de Archify (iframes) se vean completos, sin cortes, y que el alto que se
+// reserva antes de cargarlos coincida con el alto final (si no, la página salta al cargarlos).
 // Uso: con el servidor de desarrollo levantado (astro dev), ejecutar:
 //   npm run check:diagrams
 // Opcional: BASE_URL=http://localhost:4321 npm run check:diagrams
@@ -22,7 +23,25 @@ async function checkDiagrams() {
     const url = BASE_URL + path;
     console.log(`\nPágina: ${url}`);
     await page.goto(url, { waitUntil: 'networkidle' });
+    // Los diagramas se cargan al acercarse a ellos: se fuerza la carga y se guarda el alto reservado
+    const reservados = await page.$$eval('iframe.archify-frame', (frames) =>
+      frames.map((f) => {
+        const alto = f.getBoundingClientRect().height;
+        if (!f.src) f.src = f.dataset.src;
+        return { archivo: f.dataset.src.split('/').pop(), alto };
+      }),
+    );
+    await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
+    const finales = await page.$$eval('iframe.archify-frame', (frames) => frames.map((f) => f.getBoundingClientRect().height));
+
+    for (const [i, r] of reservados.entries()) {
+      // Si el alto reservado no coincide con el final, la página salta al cargar el diagrama
+      const diferencia = Math.abs(finales[i] - r.alto);
+      const bien = diferencia <= 4;
+      if (!bien) failures++;
+      console.log(`  [${r.archivo}] alto reservado=${Math.round(r.alto)}px, final=${Math.round(finales[i])}px -> ${bien ? '✅ sin salto' : `❌ salta ${Math.round(diferencia)}px (ejecuta npm run medir:diagramas)`}`);
+    }
 
     for (const frame of page.frames().slice(1)) {
       const name = frame.url().split('/').pop();
@@ -42,10 +61,10 @@ async function checkDiagrams() {
 
   await browser.close();
   if (failures > 0) {
-    console.error(`\n${failures} diagrama(s) cortado(s).`);
+    console.error(`\n${failures} problema(s) en los diagramas.`);
     process.exit(1);
   }
-  console.log('\nTodos los diagramas se ven completos.');
+  console.log('\nTodos los diagramas se ven completos y sin saltos.');
 }
 
 checkDiagrams().catch((err) => {

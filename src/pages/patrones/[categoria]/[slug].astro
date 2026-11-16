@@ -11,6 +11,7 @@ import { COLOR_CATEGORIA, PATRONES, nombrePatron, rutaPatron, type PatternData }
 import { LENGUAJES, ejemplo, nombreArchivo } from '../../../data/lenguajes';
 import { COMPARACIONES } from '../../../contenido/comparaciones';
 import { resaltar } from '../../../lib/codigo';
+import DiagramaArchify from '../../../components/DiagramaArchify.astro';
 
 export function getStaticPaths() {
   return PATRONES.map((p) => ({ params: { categoria: p.category, slug: p.slug }, props: { pattern: p } }));
@@ -105,14 +106,7 @@ const ejemplos = LENGUAJES.map((l) => ({ lenguaje: l, ejemplo: ejemplo(l, patter
         <h2 class="font-headline text-2xl font-bold uppercase text-primary flex items-center gap-2">
           <span class="material-symbols-outlined text-primary-container">schema</span>{ui.diagramaClases}
         </h2>
-        <div class="rounded-xl overflow-hidden border border-surface-container-high bg-[#0b0e15]">
-          <iframe
-            src={`/diagrams/${pattern.slug}.class.html`}
-            title={formato(ui.diagramaDe, { x: pattern.name })}
-            class="w-full h-[760px] border-0 archify-frame block"
-            scrolling="no"
-          ></iframe>
-        </div>
+        <DiagramaArchify archivo={`${pattern.slug}.class.html`} titulo={formato(ui.diagramaDe, { x: pattern.name })} />
         <p class="font-body text-xs text-on-surface-variant">
           {ui.diagramaAyuda}
         </p>

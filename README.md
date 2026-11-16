@@ -43,15 +43,16 @@ Las páginas de POO, diseño, SOLID y cada patrón tienen un botón "Marcar como
 ├── scripts/
 │   ├── check-diagrams.mjs        # Los diagramas no salen cortados
 │   ├── generar-og.mjs            # Genera public/og.png
+│   ├── medir-diagramas.mjs       # Mide el alto de cada diagrama
 │   └── verificar-codigo.mjs      # Compila y ejecuta los ejemplos
 └── src/
     ├── codigo/<lenguaje>/   # Los 23 ejemplos por lenguaje
     ├── components/          # Navbar, Footer, Buscador, BloqueCodigo, Logo, EjerciciosPatron, MarcarEstudiado
     │   └── inicio/          # Secciones de la página de inicio
     ├── contenido/           # Textos de cada página, de la interfaz (ui.ts) y bancos de ejercicios
-    ├── data/                # Patrones, catálogo y lenguajes
+    ├── data/                # Patrones, catálogo, lenguajes y medidas de los diagramas
     ├── layouts/             # Layout con SEO (canonical, Open Graph)
-    ├── lib/                 # Resaltado de código, motor de ejercicios y progreso
+    ├── lib/                 # Resaltado de código, íconos, motor de ejercicios y progreso
     ├── pages/
     │   ├── buscar.json.ts   # Índice del buscador
     │   ├── 404.astro
@@ -68,7 +69,8 @@ Las páginas de POO, diseño, SOLID y cada patrón tienen un botón "Marcar como
 | `npm run build` | Genera el sitio en `./dist/` |
 | `npm run preview` | Previsualiza el build localmente |
 | `npm run verificar:codigo` | Compila y ejecuta todos los ejemplos de código (`-- --salida` para ver lo que imprimen) |
-| `npm run check:diagrams` | Comprueba que los diagramas no salgan cortados (requiere el servidor levantado; `BASE_URL` para otro puerto) |
+| `npm run check:diagrams` | Comprueba que los diagramas no salgan cortados ni hagan saltar la página (requiere el servidor levantado; `BASE_URL` para otro puerto) |
+| `npm run medir:diagramas` | Mide el alto de cada diagrama a distintos anchos (`src/data/alturas-diagramas.json`) |
 | `npm run generar:og` | Regenera `public/og.png` con Playwright |
 
 ## SEO y dominio
@@ -88,6 +90,13 @@ Se generan con Archify desde `../research/nuevos-diagramas/generar.mjs`:
 ```sh
 node generar.mjs [slug ...]   # genera y copia a public/diagrams/
 ```
+
+Después de regenerar un diagrama hay que ejecutar `npm run medir:diagramas`. Los diagramas se cargan al acercarse a ellos (`src/components/DiagramaArchify.astro`), y su alto se reserva antes con esas medidas para que la página no salte; `npm run check:diagrams` avisa si una medida quedó desactualizada.
+
+## Rendimiento
+
+- Los íconos de Material Symbols se piden a Google Fonts solo con los nombres que usa la web (`src/lib/iconos.ts` los extrae del código al compilar), unos 12 KB en lugar de más de 1 MB.
+- El gris de los comentarios del tema de código se aclara (`src/lib/codigo.ts`) para cumplir el contraste mínimo.
 
 ## Verificación del código
 

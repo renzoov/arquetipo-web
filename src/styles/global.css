@@ -80,6 +80,14 @@ pre,
   font-feature-settings: "liga" 0, "calt" 0;
 }
 
+/* Los íconos ocupan siempre 1em × 1em: mientras carga su fuente, el nombre del ícono en texto
+   (por ejemplo, "radio_button_unchecked") no ensancha los botones ni mueve la página */
+.material-symbols-outlined {
+  width: 1em;
+  height: 1em;
+  overflow: hidden;
+}
+
 /* Fragmentos de código resaltados con Shiki (POO, principios, patrones, comparaciones) */
 .shiki-wrapper pre.shiki {
   margin: 0;

@@ -12,7 +12,8 @@
     "astro": "astro",
     "check:diagrams": "node scripts/check-diagrams.mjs",
     "verificar:codigo": "node scripts/verificar-codigo.mjs",
-    "generar:og": "node scripts/generar-og.mjs"
+    "generar:og": "node scripts/generar-og.mjs",
+    "medir:diagramas": "node scripts/medir-diagramas.mjs"
   },
   "dependencies": {
     "astro": "^7.4.5"

@@ -7,6 +7,7 @@ import MarcarEstudiado from '../../components/MarcarEstudiado.astro';
 import { formato, ui } from '../../contenido/ui';
 import { ENCABEZADO as e, PILARES, RELACIONES } from '../../contenido/poo';
 import { resaltar } from '../../lib/codigo';
+import DiagramaArchify from '../../components/DiagramaArchify.astro';
 
 
 const TONO = {
@@ -43,14 +44,7 @@ const relaciones = await Promise.all(RELACIONES.map(async (r) => ({ ...r, html: 
         <h2 class="font-headline text-2xl font-bold uppercase text-primary flex items-center gap-2">
           <span class="material-symbols-outlined text-primary-container">schema</span>{e.diagramaPilares}
         </h2>
-        <div class="rounded-xl overflow-hidden border border-surface-container-high bg-[#0b0e15]">
-          <iframe
-            src="/diagrams/poo-pilares.class.html"
-            title={formato(ui.diagramaDe, { x: e.diagramaPilares })}
-            class="w-full h-[760px] border-0 archify-frame block"
-            scrolling="no"
-          ></iframe>
-        </div>
+        <DiagramaArchify archivo="poo-pilares.class.html" titulo={formato(ui.diagramaDe, { x: e.diagramaPilares })} />
       </section>
 
       <!-- 1. Los 4 pilares -->
@@ -83,14 +77,7 @@ const relaciones = await Promise.all(RELACIONES.map(async (r) => ({ ...r, html: 
         <h2 class="font-headline text-2xl font-bold uppercase text-primary flex items-center gap-2">
           <span class="material-symbols-outlined text-primary-container">hub</span>{e.diagramaRelaciones}
         </h2>
-        <div class="rounded-xl overflow-hidden border border-surface-container-high bg-[#0b0e15]">
-          <iframe
-            src="/diagrams/poo-relaciones.class.html"
-            title={formato(ui.diagramaDe, { x: e.diagramaRelaciones })}
-            class="w-full h-[760px] border-0 archify-frame block"
-            scrolling="no"
-          ></iframe>
-        </div>
+        <DiagramaArchify archivo="poo-relaciones.class.html" titulo={formato(ui.diagramaDe, { x: e.diagramaRelaciones })} />
       </section>
 
       <!-- 2. Las 4 relaciones -->

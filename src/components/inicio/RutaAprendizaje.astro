@@ -17,7 +17,7 @@ import { PATRONES } from '../../data/catalogo';
             <span class={`w-10 h-10 rounded-lg border flex items-center justify-center ${paso.fondo} ${paso.color}`}>
               <span class="material-symbols-outlined text-[22px]">{paso.icono}</span>
             </span>
-            <span class="font-headline text-3xl font-bold text-surface-container-highest group-hover:text-surface-bright transition-colors">{paso.n}</span>
+            <span class="font-headline text-3xl font-bold text-outline/70 group-hover:text-outline transition-colors">{paso.n}</span>
           </div>
           {paso.transicion
             ? <h3 transition:name={paso.transicion} class="font-code text-sm font-bold text-slate-100 w-fit">{paso.titulo}</h3>

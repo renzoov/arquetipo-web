@@ -1,0 +1,41 @@
+---
+// Diagrama de Archify en un iframe que se carga al acercarse a él (ver el script del Layout).
+// Su alto se reserva antes de cargarlo con las medidas de src/data/alturas-diagramas.json,
+// para que la página no salte cuando aparece el diagrama.
+import MEDIDAS from '../data/alturas-diagramas.json';
+
+interface Props {
+  /** Archivo en public/diagrams, por ejemplo "builder.class.html". */
+  archivo: string;
+  titulo: string;
+}
+
+const { archivo, titulo } = Astro.props;
+const altos = (MEDIDAS.alturas as Record<string, number[]>)[archivo];
+if (!altos) throw new Error(`Falta la medida del diagrama ${archivo}: ejecuta npm run medir:diagramas`);
+const src = `/diagrams/${archivo}`;
+---
+
+<div class="rounded-xl overflow-hidden border border-surface-container-high bg-[#0b0e15]">
+  <iframe
+    data-src={src}
+    data-altos={altos.join(',')}
+    data-desde={MEDIDAS.desde}
+    data-paso={MEDIDAS.paso}
+    title={titulo}
+    class="w-full h-[760px] border-0 archify-frame block"
+    scrolling="no"
+  ></iframe>
+  <!-- Reserva el alto según el ancho real antes del primer pintado -->
+  <script is:inline>
+    (function (f) {
+      // Interpola entre las dos medidas más cercanas al ancho real (se midió cada `paso` px)
+      var altos = f.dataset.altos.split(',').map(Number);
+      var x = Math.max(0, Math.min(altos.length - 1, (f.clientWidth - Number(f.dataset.desde)) / Number(f.dataset.paso)));
+      var i = Math.floor(x);
+      var j = Math.min(i + 1, altos.length - 1);
+      f.style.height = Math.round(altos[i] + (altos[j] - altos[i]) * (x - i)) + 'px';
+    })(document.currentScript.previousElementSibling);
+  </script>
+  <noscript><iframe src={src} title={titulo} class="w-full h-[760px] border-0 block"></iframe></noscript>
+</div>

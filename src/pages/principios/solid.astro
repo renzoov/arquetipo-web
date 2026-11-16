@@ -7,6 +7,7 @@ import MarcarEstudiado from '../../components/MarcarEstudiado.astro';
 import { formato, ui } from '../../contenido/ui';
 import { ENCABEZADO as e, PRINCIPIOS_SOLID } from '../../contenido/solid';
 import { resaltar } from '../../lib/codigo';
+import DiagramaArchify from '../../components/DiagramaArchify.astro';
 
 
 const principios = await Promise.all(
@@ -62,14 +63,7 @@ const principios = await Promise.all(
             <p><strong class="text-amber-300">{ui.comoReconocer}</strong> {p.sintoma}</p>
           </div>
 
-          <div class="rounded-xl overflow-hidden border border-surface-container-high bg-[#0b0e15]">
-            <iframe
-              src={`/diagrams/solid-${p.id}.class.html`}
-              title={formato(ui.diagramaDe, { x: p.nombre })}
-              class="w-full h-[760px] border-0 archify-frame block"
-              scrolling="no"
-            ></iframe>
-          </div>
+          <DiagramaArchify archivo={`solid-${p.id}.class.html`} titulo={formato(ui.diagramaDe, { x: p.nombre })} />
 
           <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
             <div>

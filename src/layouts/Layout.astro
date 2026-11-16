@@ -3,6 +3,7 @@ import '../styles/global.css';
 import { ClientRouter } from 'astro:transitions';
 import { META } from '../contenido/inicio';
 import Buscador from '../components/Buscador.astro';
+import { URL_ICONOS } from '../lib/iconos';
 
 interface Props {
 	title?: string;
@@ -56,11 +57,8 @@ const imagen = absoluta('/og.png');
 			rel="stylesheet"
 		/>
 
-		<!-- Google Material Symbols Outlined -->
-		<link
-			href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-			rel="stylesheet"
-		/>
+		<!-- Material Symbols: solo los íconos que usa la web (ver src/lib/iconos.ts) -->
+		<link href={URL_ICONOS} rel="stylesheet" />
 
 		<!-- Transiciones animadas entre páginas (View Transitions) -->
 		<ClientRouter />
@@ -101,6 +99,8 @@ const imagen = absoluta('/og.png');
 
 			function watchFrame(frame: HTMLIFrameElement) {
 				const setup = () => {
+					// Un iframe que aún no se carga contiene about:blank: no hay nada que medir
+					if (!frame.contentDocument || frame.contentDocument.URL === 'about:blank') return;
 					fitFrame(frame);
 					const doc = frame.contentDocument;
 					const target = doc?.querySelector('.container') ?? doc?.body;
@@ -114,9 +114,28 @@ const imagen = absoluta('/og.png');
 				if (frame.contentDocument?.readyState === 'complete' && frame.contentDocument.URL !== 'about:blank') setup();
 			}
 
+			// Los diagramas pesan (cada uno ejecuta bastante JavaScript): se cargan al acercarse a ellos.
+			// Su alto ya viene reservado por DiagramaArchify, así que cargarlos no mueve la página.
+			const cargar = (frame: HTMLIFrameElement) => {
+				if (!frame.src && frame.dataset.src) frame.src = frame.dataset.src;
+			};
+			const cercania = 'IntersectionObserver' in window
+				? new IntersectionObserver((entradas, observador) => {
+					for (const entrada of entradas) {
+						if (!entrada.isIntersecting) continue;
+						observador.unobserve(entrada.target);
+						cargar(entrada.target as HTMLIFrameElement);
+					}
+				}, { rootMargin: '400px 0px' })
+				: null;
+
 			// Con View Transitions el script se carga una sola vez: se reaplica en cada navegación.
 			document.addEventListener('astro:page-load', () => {
-				document.querySelectorAll<HTMLIFrameElement>('iframe.archify-frame').forEach(watchFrame);
+				document.querySelectorAll<HTMLIFrameElement>('iframe.archify-frame').forEach((frame) => {
+					watchFrame(frame);
+					if (cercania) cercania.observe(frame);
+					else cargar(frame);
+				});
 			});
 		</script>
 	</body>
