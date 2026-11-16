@@ -9,6 +9,8 @@ import { PRINCIPIOS_DISENO, ENCABEZADO as DISENO } from '../contenido/diseno.ts'
 import { PILARES, RELACIONES, ENCABEZADO as POO } from '../contenido/poo.ts';
 import { COMPARACIONES, ENCABEZADO as COMPARAR } from '../contenido/comparaciones.ts';
 import { ANTIPATRONES, ENCABEZADO as ANTI } from '../contenido/antipatrones.ts';
+import { EJERCICIOS } from '../contenido/inicio.ts';
+import { SECCIONES } from '../contenido/ejercicios/index.ts';
 
 interface EntradaBusqueda {
   /** Título que se muestra. */
@@ -36,6 +38,8 @@ function indice(): EntradaBusqueda[] {
     { t: SOLID.titulo, d: corto(SOLID.intro), k: ui.tipoPagina, i: 'memory', u: '/principios/solid' },
     { t: COMPARAR.titulo, d: corto(COMPARAR.intro), k: ui.tipoPagina, i: 'compare_arrows', u: '/comparaciones' },
     { t: ANTI.titulo, d: corto(ANTI.intro), k: ui.tipoPagina, i: 'report', u: '/antipatrones' },
+    { t: EJERCICIOS.titulo, d: corto(EJERCICIOS.intro), k: ui.tipoPagina, i: 'quiz', u: '/ejercicios', x: 'examen práctica preguntas quiz test' },
+    ...SECCIONES.map((s) => ({ t: `Ejercicios de ${s.titulo}`, d: corto(s.descripcion), k: ui.tipoEjercicios, i: 'quiz', u: `/ejercicios/${s.id}`, x: 'examen práctica preguntas quiz test' })),
 
     // Patrones: se buscan por nombre, alias y, sobre todo, por el problema que resuelven
     ...PATRONES.map((p) => ({

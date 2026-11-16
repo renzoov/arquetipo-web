@@ -1,9 +1,10 @@
 ---
-// Los 5 pasos de la ruta de aprendizaje.
+// Los 5 pasos de la ruta de aprendizaje, con el progreso de estudio guardado en el navegador.
 import { RUTA } from '../../contenido/inicio';
+import { PATRONES } from '../../data/catalogo';
 ---
 
-<section id="ruta" class="scroll-mt-24 flex flex-col gap-5">
+<section id="ruta" data-total-patrones={PATRONES.length} class="scroll-mt-24 flex flex-col gap-5">
   <div>
     <span class="font-badge text-[10px] text-secondary-container uppercase tracking-widest">{RUTA.etiqueta}</span>
     <h2 class="font-headline text-2xl font-bold uppercase text-primary mt-1">{RUTA.titulo}</h2>
@@ -11,7 +12,7 @@ import { RUTA } from '../../contenido/inicio';
   <ol class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
     {RUTA.pasos.map((paso) => (
       <li>
-        <a href={paso.href} class="h-full p-5 rounded-xl bg-surface-container-lowest/90 border border-surface-container-high hover:border-primary-container/40 transition-all flex flex-col gap-3 group">
+        <a href={paso.href} data-paso-progreso={paso.progreso} class="h-full p-5 rounded-xl bg-surface-container-lowest/90 border border-surface-container-high hover:border-primary-container/40 transition-all flex flex-col gap-3 group">
           <div class="flex items-center justify-between">
             <span class={`w-10 h-10 rounded-lg border flex items-center justify-center ${paso.fondo} ${paso.color}`}>
               <span class="material-symbols-outlined text-[22px]">{paso.icono}</span>
@@ -22,9 +23,39 @@ import { RUTA } from '../../contenido/inicio';
             ? <h3 transition:name={paso.transicion} class="font-code text-sm font-bold text-slate-100 w-fit">{paso.titulo}</h3>
             : <h3 class="font-code text-sm font-bold text-slate-100">{paso.titulo}</h3>}
           <p class="font-body text-xs text-slate-300 leading-relaxed">{paso.texto}</p>
-          <span class={`mt-auto font-badge text-[10px] uppercase tracking-wider ${paso.color}`}>{RUTA.empezar}</span>
+          <span class="mt-auto flex items-center justify-between gap-2">
+            <span class={`font-badge text-[10px] uppercase tracking-wider ${paso.color}`}>{RUTA.empezar}</span>
+            {paso.progreso && <span data-estado-paso hidden class="flex items-center gap-1 font-badge text-[10px] uppercase tracking-wider text-secondary-container"></span>}
+          </span>
         </a>
       </li>
     ))}
   </ol>
 </section>
+
+<script>
+  import { EVENTO_PROGRESO, leerProgreso } from '../../lib/progreso';
+
+  // Paso 01-03: "Estudiado" si se marcó la página. Paso 04: cuántos patrones se marcaron.
+  const pintar = () => {
+    const ruta = document.querySelector<HTMLElement>('#ruta[data-total-patrones]');
+    if (!ruta) return;
+    const progreso = leerProgreso();
+    ruta.querySelectorAll<HTMLElement>('[data-paso-progreso]').forEach((paso) => {
+      const estado = paso.querySelector<HTMLElement>('[data-estado-paso]');
+      if (!estado) return;
+      const id = paso.dataset.pasoProgreso!;
+      if (id === 'patrones') {
+        const estudiados = [...progreso].filter((p) => p.startsWith('patron:')).length;
+        estado.textContent = `${estudiados}/${ruta.dataset.totalPatrones}`;
+        estado.hidden = estudiados === 0;
+      } else {
+        estado.innerHTML = '<span class="material-symbols-outlined text-[15px]">check_circle</span>Estudiado';
+        estado.hidden = !progreso.has(id);
+      }
+    });
+  };
+
+  document.addEventListener(EVENTO_PROGRESO, pintar);
+  document.addEventListener('astro:page-load', pintar);
+</script>

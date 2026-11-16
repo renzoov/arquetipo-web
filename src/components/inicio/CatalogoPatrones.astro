@@ -21,11 +21,20 @@ import { CATEGORIAS, COLOR_CATEGORIA, PATRONES as patrones, rutaPatron } from '.
     </div>
   </div>
 
+  <!-- Progreso de estudio (se guarda en el navegador) -->
+  <div class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 rounded-lg bg-surface-container-low border border-surface-container-high">
+    <span class="font-body text-sm text-slate-200">Tu progreso: <strong data-progreso-cuenta class="text-secondary-container">0</strong> de {patrones.length} patrones estudiados</span>
+    <div class="flex-1 min-w-[120px] h-1.5 rounded-full bg-surface-container-high overflow-hidden" aria-hidden="true">
+      <div data-progreso-barra class="h-full bg-secondary-container transition-all" style="width: 0%"></div>
+    </div>
+    <button type="button" data-progreso-reiniciar hidden class="font-badge text-[10px] uppercase tracking-wider text-on-surface-variant hover:text-primary">Reiniciar</button>
+  </div>
+
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
     {patrones.map((p) => {
       const e = COLOR_CATEGORIA[p.category];
       return (
-        <a href={rutaPatron(p.slug)} data-categoria={p.category} class={`patron-card p-4 rounded-xl bg-surface-container-lowest/90 border border-surface-container-high ${e.hover} transition-all flex flex-col gap-2.5`}>
+        <a href={rutaPatron(p.slug)} data-categoria={p.category} data-slug={p.slug} class={`patron-card p-4 rounded-xl bg-surface-container-lowest/90 border border-surface-container-high ${e.hover} transition-all flex flex-col gap-2.5`}>
           <div class="flex items-start justify-between gap-2">
             <h3 transition:name={`patron-${p.slug}`} class="font-code text-sm font-bold text-slate-100 w-fit">{p.name}</h3>
             <span class={`flex items-center gap-1.5 font-badge text-[9px] uppercase tracking-wider shrink-0 mt-0.5 ${e.texto}`}>
@@ -33,6 +42,9 @@ import { CATEGORIAS, COLOR_CATEGORIA, PATRONES as patrones, rutaPatron } from '.
             </span>
           </div>
           <p class="font-body text-xs text-slate-300 leading-relaxed">“{p.problema}”</p>
+          <span data-estudiado hidden class="mt-auto flex items-center gap-1 font-badge text-[10px] uppercase tracking-wider text-secondary-container">
+            <span class="material-symbols-outlined text-[15px]">check_circle</span>Estudiado
+          </span>
         </a>
       );
     })}
@@ -40,8 +52,34 @@ import { CATEGORIAS, COLOR_CATEGORIA, PATRONES as patrones, rutaPatron } from '.
 </section>
 
 <script>
+  import { EVENTO_PROGRESO, leerProgreso, reiniciar } from '../../lib/progreso';
+
+  // Marca las tarjetas de los patrones estudiados y actualiza la barra de progreso
+  const pintarProgreso = () => {
+    const tarjetas = document.querySelectorAll<HTMLElement>('.patron-card[data-slug]');
+    if (!tarjetas.length) return;
+    const progreso = leerProgreso();
+    let estudiados = 0;
+    tarjetas.forEach((t) => {
+      const hecho = progreso.has(`patron:${t.dataset.slug}`);
+      if (hecho) estudiados++;
+      t.querySelector<HTMLElement>('[data-estudiado]')!.hidden = !hecho;
+    });
+    document.querySelector('[data-progreso-cuenta]')!.textContent = String(estudiados);
+    document.querySelector<HTMLElement>('[data-progreso-barra]')!.style.width = `${(estudiados / tarjetas.length) * 100}%`;
+    document.querySelector<HTMLElement>('[data-progreso-reiniciar]')!.hidden = estudiados === 0;
+  };
+
+  document.addEventListener(EVENTO_PROGRESO, pintarProgreso);
+  document.addEventListener('click', (evento) => {
+    if (!(evento.target as HTMLElement).closest('[data-progreso-reiniciar]')) return;
+    const ids = [...document.querySelectorAll<HTMLElement>('.patron-card[data-slug]')].map((t) => `patron:${t.dataset.slug}`);
+    reiniciar(ids);
+  });
+
   // Filtro del catálogo. Con View Transitions, las cards se reacomodan con una animación.
   document.addEventListener('astro:page-load', () => {
+    pintarProgreso();
     const botones = document.querySelectorAll<HTMLButtonElement>('.filtro-btn');
     const cards = document.querySelectorAll<HTMLElement>('.patron-card');
     const activo = ['border-primary-container/40', 'bg-primary-container/15', 'text-primary'];

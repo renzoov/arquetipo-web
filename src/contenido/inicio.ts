@@ -23,19 +23,19 @@ export const RUTA = {
   titulo: 'Ruta de aprendizaje',
   empezar: 'Empezar →',
   pasos: [
-    { n: '01', transicion: 'titulo-poo', href: '/fundamentos/poo', icono: 'account_tree', color: 'text-secondary-container', fondo: 'bg-secondary-container/15 border-secondary-container/30',
+    { n: '01', progreso: 'poo', transicion: 'titulo-poo', href: '/fundamentos/poo', icono: 'account_tree', color: 'text-secondary-container', fondo: 'bg-secondary-container/15 border-secondary-container/30',
       titulo: 'Fundamentos de POO',
       texto: 'Los 4 pilares y cómo se relacionan los objetos. La base de todo lo demás.' },
-    { n: '02', transicion: 'titulo-diseno', href: '/principios/diseno', icono: 'lightbulb', color: 'text-secondary-fixed', fondo: 'bg-secondary-container/10 border-secondary-container/25',
+    { n: '02', progreso: 'diseno', transicion: 'titulo-diseno', href: '/principios/diseno', icono: 'lightbulb', color: 'text-secondary-fixed', fondo: 'bg-secondary-container/10 border-secondary-container/25',
       titulo: 'Principios de diseño',
       texto: 'Cinco ideas que están detrás de SOLID y de todos los patrones.' },
-    { n: '03', transicion: 'titulo-solid', href: '/principios/solid', icono: 'memory', color: 'text-primary-container', fondo: 'bg-primary-container/15 border-primary-container/30',
+    { n: '03', progreso: 'solid', transicion: 'titulo-solid', href: '/principios/solid', icono: 'memory', color: 'text-primary-container', fondo: 'bg-primary-container/15 border-primary-container/30',
       titulo: 'Principios SOLID',
       texto: 'Cinco guías para escribir código que se pueda cambiar sin miedo.' },
-    { n: '04', transicion: undefined, href: '/#patrones', icono: 'category', color: 'text-tertiary-fixed-dim', fondo: 'bg-tertiary-fixed-dim/15 border-tertiary-fixed-dim/30',
+    { n: '04', progreso: 'patrones', transicion: undefined, href: '/#patrones', icono: 'category', color: 'text-tertiary-fixed-dim', fondo: 'bg-tertiary-fixed-dim/15 border-tertiary-fixed-dim/30',
       titulo: '23 patrones de diseño',
       texto: 'Soluciones probadas a problemas que se repiten, con casos reales.' },
-    { n: '05', transicion: undefined, href: '/#lenguajes', icono: 'code_blocks', color: 'text-amber-300', fondo: 'bg-amber-400/10 border-amber-400/25',
+    { n: '05', progreso: undefined, transicion: undefined, href: '/#lenguajes', icono: 'code_blocks', color: 'text-amber-300', fondo: 'bg-amber-400/10 border-amber-400/25',
       titulo: 'En tu lenguaje',
       texto: 'Cada patrón aplicado de forma idiomática en 8 lenguajes.' },
   ],
@@ -90,7 +90,18 @@ export const PROFUNDIZAR = {
       titulo: 'Antipatrones y code smells',
       texto: 'Objeto dios, condicionales que no paran de crecer, patronitis… Cómo reconocer lo que sale mal y qué principio o patrón lo corrige.',
       accion: 'Ver antipatrones →' },
+    { href: '/ejercicios', icono: 'quiz', color: 'text-secondary-container', borde: 'hover:border-secondary-container/50',
+      titulo: 'Ejercicios',
+      texto: 'Pon a prueba lo que aprendiste: preguntas de POO, SOLID y patrones que cambian en cada intento, con la explicación de cada respuesta.',
+      accion: 'Practicar →' },
   ],
+};
+
+export const EJERCICIOS = {
+  titulo: 'Ejercicios',
+  intro: 'Elige una sección y responde preguntas sobre casos reales, código y diferencias entre conceptos. Cada intento sortea preguntas distintas de un banco grande y te explica cada respuesta al momento.',
+  descripcion: 'Ejercicios de POO, principios SOLID y patrones de diseño: preguntas al azar en cada intento, con corrección y explicación inmediata.',
+  empezar: 'Practicar →',
 };
 
 export const LENGUAJES_INICIO = {

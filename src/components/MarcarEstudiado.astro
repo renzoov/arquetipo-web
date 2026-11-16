@@ -1,0 +1,49 @@
+---
+// Botón para marcar una página como estudiada. El estado se guarda en el navegador (src/lib/progreso.ts).
+interface Props {
+  /** 'poo', 'diseno', 'solid' o 'patron:<slug>'. */
+  id: string;
+}
+
+const { id } = Astro.props;
+---
+
+<button type="button" data-marcar-estudiado={id} aria-pressed="false"
+  class="marcar-estudiado inline-flex items-center gap-1.5 w-fit px-3.5 py-1.5 rounded-full border border-surface-container-high bg-surface-container-low text-on-surface-variant font-body text-xs font-medium hover:border-secondary-container/50 hover:text-secondary-container transition-colors">
+  <span class="material-symbols-outlined text-[17px] icono-pendiente">radio_button_unchecked</span>
+  <span class="material-symbols-outlined text-[17px] icono-hecho">check_circle</span>
+  <span class="texto-pendiente">Marcar como estudiado</span>
+  <span class="texto-hecho">Estudiado</span>
+</button>
+
+<style>
+  .icono-hecho, .texto-hecho { display: none; }
+  .marcar-estudiado[aria-pressed='true'] .icono-hecho,
+  .marcar-estudiado[aria-pressed='true'] .texto-hecho { display: inline; }
+  .marcar-estudiado[aria-pressed='true'] .icono-pendiente,
+  .marcar-estudiado[aria-pressed='true'] .texto-pendiente { display: none; }
+  .marcar-estudiado[aria-pressed='true'] {
+    color: var(--color-secondary-container);
+    border-color: color-mix(in srgb, var(--color-secondary-container) 45%, transparent);
+    background-color: color-mix(in srgb, var(--color-secondary-container) 10%, transparent);
+  }
+</style>
+
+<script>
+  import { EVENTO_PROGRESO, leerProgreso, marcar } from '../lib/progreso';
+
+  const sincronizar = () => {
+    const progreso = leerProgreso();
+    document.querySelectorAll<HTMLButtonElement>('[data-marcar-estudiado]').forEach((b) => {
+      b.setAttribute('aria-pressed', String(progreso.has(b.dataset.marcarEstudiado!)));
+    });
+  };
+
+  // Un solo listener para todos los botones (con View Transitions este script no se repite)
+  document.addEventListener('click', (evento) => {
+    const boton = (evento.target as HTMLElement).closest<HTMLButtonElement>('[data-marcar-estudiado]');
+    if (boton) marcar(boton.dataset.marcarEstudiado!, boton.getAttribute('aria-pressed') !== 'true');
+  });
+  document.addEventListener(EVENTO_PROGRESO, sincronizar);
+  document.addEventListener('astro:page-load', sincronizar);
+</script>

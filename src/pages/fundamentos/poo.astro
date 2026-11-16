@@ -3,6 +3,7 @@
 import Layout from '../../layouts/Layout.astro';
 import Navbar from '../../components/Navbar.astro';
 import Footer from '../../components/Footer.astro';
+import MarcarEstudiado from '../../components/MarcarEstudiado.astro';
 import { formato, ui } from '../../contenido/ui';
 import { ENCABEZADO as e, PILARES, RELACIONES } from '../../contenido/poo';
 import { resaltar } from '../../lib/codigo';
@@ -27,13 +28,14 @@ const relaciones = await Promise.all(RELACIONES.map(async (r) => ({ ...r, html: 
       <!-- Encabezado -->
       <header class="flex flex-col gap-4">
         <nav class="flex items-center gap-2 font-telemetry text-xs text-on-surface-variant" aria-label={ui.ruta}>
-          <a href={'/'} class="hover:text-primary">{ui.inicio}</a>
+          <a href="/" class="hover:text-primary">{ui.inicio}</a>
           <span>/</span>
           <span class="text-secondary-container">{e.titulo}</span>
         </nav>
         <span class="font-badge text-[10px] text-secondary-container uppercase tracking-widest">{formato(ui.pasoDeLaRuta, { n: '01' })}</span>
         <h1 transition:name="titulo-poo" class="font-headline text-4xl sm:text-5xl font-bold text-primary w-fit">{e.titulo}</h1>
         <p class="font-body text-lg text-slate-200 max-w-4xl leading-relaxed">{e.intro}</p>
+        <MarcarEstudiado id="poo" />
       </header>
 
       <!-- Diagrama de los 4 pilares -->
@@ -43,7 +45,7 @@ const relaciones = await Promise.all(RELACIONES.map(async (r) => ({ ...r, html: 
         </h2>
         <div class="rounded-xl overflow-hidden border border-surface-container-high bg-[#0b0e15]">
           <iframe
-            src={'/diagrams/poo-pilares.class.html'}
+            src="/diagrams/poo-pilares.class.html"
             title={formato(ui.diagramaDe, { x: e.diagramaPilares })}
             class="w-full h-[760px] border-0 archify-frame block"
             scrolling="no"
@@ -83,7 +85,7 @@ const relaciones = await Promise.all(RELACIONES.map(async (r) => ({ ...r, html: 
         </h2>
         <div class="rounded-xl overflow-hidden border border-surface-container-high bg-[#0b0e15]">
           <iframe
-            src={'/diagrams/poo-relaciones.class.html'}
+            src="/diagrams/poo-relaciones.class.html"
             title={formato(ui.diagramaDe, { x: e.diagramaRelaciones })}
             class="w-full h-[760px] border-0 archify-frame block"
             scrolling="no"
@@ -102,7 +104,7 @@ const relaciones = await Promise.all(RELACIONES.map(async (r) => ({ ...r, html: 
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {relaciones.map((r, i) => (
-            <article class={`p-6 rounded-xl bg-surface-container-lowest/90 border flex flex-col gap-4 ${r.destacado ? 'border-secondary-container/40' : 'border-surface-container-high'}`}>
+            <article id={r.id} class={`scroll-mt-24 p-6 rounded-xl bg-surface-container-lowest/90 border flex flex-col gap-4 ${r.destacado ? 'border-secondary-container/40' : 'border-surface-container-high'}`}>
               <div class="flex items-start justify-between gap-3">
                 <div>
                   <h3 class={`font-headline text-xl font-bold ${r.destacado ? 'text-secondary-container' : 'text-primary'}`}>{i + 1}. {r.nombre} <span class="font-body text-base font-normal text-on-surface-variant">· {r.subtitulo}</span></h3>
@@ -121,9 +123,12 @@ const relaciones = await Promise.all(RELACIONES.map(async (r) => ({ ...r, html: 
         </p>
       </section>
 
-      <a href={'/principios/diseno'} class="self-end inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary-container text-on-primary font-body text-sm font-semibold hover:bg-primary transition-colors">
-        {e.siguiente} <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
-      </a>
+      <div class="flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-surface-container-high">
+        <MarcarEstudiado id="poo" />
+        <a href="/principios/diseno" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary-container text-on-primary font-body text-sm font-semibold hover:bg-primary transition-colors">
+          {e.siguiente} <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+        </a>
+      </div>
     </div>
     <Footer />
   </main>

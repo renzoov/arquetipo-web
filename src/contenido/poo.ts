@@ -158,6 +158,7 @@ await cobrarPedido([
 ];
 
 interface Relacion {
+  id: string;
   nombre: string;
   subtitulo: string;
   uml: string;
@@ -169,6 +170,7 @@ interface Relacion {
 
 export const RELACIONES: Relacion[] = [
   {
+    id: 'dependencia',
     nombre: 'Dependencia',
     subtitulo: 'Uso temporal',
     uml: 'Línea discontinua con flecha abierta ( - - -> )',
@@ -184,6 +186,7 @@ export const RELACIONES: Relacion[] = [
     destacado: false,
   },
   {
+    id: 'asociacion',
     nombre: 'Asociación',
     subtitulo: 'Conocimiento sostenido',
     uml: 'Línea continua; la flecha (opcional) indica quién conoce a quién',
@@ -201,6 +204,7 @@ export const RELACIONES: Relacion[] = [
     destacado: false,
   },
   {
+    id: 'agregacion',
     nombre: 'Agregación',
     subtitulo: 'Todo-parte débil',
     uml: 'Línea con rombo hueco en el lado del todo ( ◇— )',
@@ -218,6 +222,7 @@ export const RELACIONES: Relacion[] = [
     destacado: false,
   },
   {
+    id: 'composicion',
     nombre: 'Composición',
     subtitulo: 'Todo-parte fuerte',
     uml: 'Línea con rombo relleno en el lado del todo ( ◆— )',

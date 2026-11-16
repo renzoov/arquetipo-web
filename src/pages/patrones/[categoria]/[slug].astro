@@ -4,6 +4,8 @@ import Layout from '../../../layouts/Layout.astro';
 import Navbar from '../../../components/Navbar.astro';
 import Footer from '../../../components/Footer.astro';
 import BloqueCodigo from '../../../components/BloqueCodigo.astro';
+import EjerciciosPatron from '../../../components/EjerciciosPatron.astro';
+import MarcarEstudiado from '../../../components/MarcarEstudiado.astro';
 import { formato, ui } from '../../../contenido/ui';
 import { COLOR_CATEGORIA, PATRONES, nombrePatron, rutaPatron, type PatternData } from '../../../data/catalogo';
 import { LENGUAJES, ejemplo, nombreArchivo } from '../../../data/lenguajes';
@@ -47,9 +49,9 @@ const ejemplos = LENGUAJES.map((l) => ({ lenguaje: l, ejemplo: ejemplo(l, patter
       <!-- Encabezado -->
       <header class="flex flex-col gap-5">
         <nav class="flex flex-wrap items-center gap-2 font-telemetry text-xs text-on-surface-variant" aria-label={ui.ruta}>
-          <a href={'/'} class="hover:text-primary">{ui.inicio}</a>
+          <a href="/" class="hover:text-primary">{ui.inicio}</a>
           <span>/</span>
-          <a href={'/#patrones'} class="hover:text-primary">{ui.patrones}</a>
+          <a href="/#patrones" class="hover:text-primary">{ui.patrones}</a>
           <span>/</span>
           <span class={color.texto}>{pattern.categoryLabel}</span>
         </nav>
@@ -63,6 +65,7 @@ const ejemplos = LENGUAJES.map((l) => ({ lenguaje: l, ejemplo: ejemplo(l, patter
         <div class="flex flex-col gap-2">
           <h1 transition:name={`patron-${pattern.slug}`} class="font-headline text-4xl sm:text-5xl font-bold text-primary w-fit">{pattern.name}</h1>
           <p class="font-telemetry text-sm text-on-surface-variant">{pattern.aka}</p>
+          <MarcarEstudiado id={`patron:${pattern.slug}`} />
         </div>
 
         <p class="font-body text-lg text-slate-200 leading-relaxed max-w-4xl">{pattern.purpose}</p>
@@ -224,6 +227,8 @@ const ejemplos = LENGUAJES.map((l) => ({ lenguaje: l, ejemplo: ejemplo(l, patter
         </section>
       )}
 
+      <EjerciciosPatron slug={pattern.slug} />
+
       <!-- 6. En tu lenguaje -->
       <section id="en-tu-lenguaje" class="scroll-mt-24 flex flex-col gap-4">
         <div class="flex items-end justify-between flex-wrap gap-3">
@@ -270,7 +275,7 @@ const ejemplos = LENGUAJES.map((l) => ({ lenguaje: l, ejemplo: ejemplo(l, patter
             <span class="font-code text-sm font-bold text-primary">{siguiente.name}</span>
           </a>
         ) : (
-          <a href={'/#patrones'} class="p-4 rounded-xl bg-surface-container-low border border-surface-container-high hover:border-primary-container/40 transition-colors flex flex-col gap-1 sm:items-end text-right">
+          <a href="/#patrones" class="p-4 rounded-xl bg-surface-container-low border border-surface-container-high hover:border-primary-container/40 transition-colors flex flex-col gap-1 sm:items-end text-right">
             <span class="font-telemetry text-[11px] text-on-surface-variant">{ui.alFinal}</span>
             <span class="font-code text-sm font-bold text-primary">{ui.volverCatalogo}</span>
           </a>

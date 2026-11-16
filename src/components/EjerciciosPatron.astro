@@ -1,0 +1,66 @@
+---
+// "Pon a prueba lo que leíste": dos preguntas al azar sobre el patrón, con corrección inmediata.
+import { preguntasDePatron } from '../contenido/ejercicios/index';
+import { prepararPreguntas } from '../lib/preparar-ejercicios';
+
+interface Props {
+  slug: string;
+}
+
+const { slug } = Astro.props;
+const preguntas = await prepararPreguntas(preguntasDePatron(slug));
+---
+
+<section data-ejercicios-patron class="p-5 sm:p-6 rounded-xl bg-surface-container-lowest/90 border border-secondary-container/25 flex flex-col gap-5">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h2 class="font-headline text-2xl font-bold uppercase text-primary flex items-center gap-2">
+        <span class="material-symbols-outlined text-secondary-container">quiz</span>Pon a prueba lo que leíste
+      </h2>
+      <p class="font-body text-sm text-slate-300 mt-1">Dos preguntas al azar sobre este patrón. Cada vez que las cambias salen otras.</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button type="button" data-otras class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface-container-high hover:bg-surface-variant text-primary font-body text-xs font-medium transition-colors">
+        <span class="material-symbols-outlined text-[16px]">refresh</span>Otras preguntas
+      </button>
+      <a href="/ejercicios/patrones" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-secondary-container/40 text-secondary-container hover:bg-secondary-container/10 font-body text-xs font-medium transition-colors">
+        Más ejercicios →
+      </a>
+    </div>
+  </div>
+  <div data-preguntas class="grid grid-cols-1 xl:grid-cols-2 gap-6"></div>
+</section>
+
+<script is:inline type="application/json" data-preguntas-patron set:html={JSON.stringify(preguntas).replace(/</g, '\\u003c')}></script>
+
+<script>
+  import { barajar, dibujarPregunta, type PreguntaCliente } from '../lib/ejercicios';
+
+  document.addEventListener('astro:page-load', () => {
+    const bloque = document.querySelector<HTMLElement>('[data-ejercicios-patron]');
+    const fuente = document.querySelector('[data-preguntas-patron]');
+    if (!bloque || !fuente || bloque.dataset.listo) return;
+    bloque.dataset.listo = 'true';
+
+    const todas = JSON.parse(fuente.textContent!) as PreguntaCliente[];
+    const contenedor = bloque.querySelector<HTMLElement>('[data-preguntas]')!;
+    let anteriores = new Set<string>();
+
+    const pintar = () => {
+      // Prefiere preguntas distintas de las que se mostraron la vez anterior
+      const nuevas = barajar(todas.filter((p) => !anteriores.has(p.id)));
+      const elegidas = [...nuevas, ...barajar(todas)].filter((p, i, l) => l.findIndex((x) => x.id === p.id) === i).slice(0, 2);
+      anteriores = new Set(elegidas.map((p) => p.id));
+      contenedor.replaceChildren(
+        ...elegidas.map((p, i) => {
+          const caja = dibujarPregunta(p, { encabezado: `Pregunta ${i + 1}`, alResponder: () => {} });
+          caja.classList.add('p-4', 'rounded-lg', 'bg-surface-container-low/60', 'border', 'border-surface-container-high');
+          return caja;
+        }),
+      );
+    };
+
+    bloque.querySelector('[data-otras]')!.addEventListener('click', pintar);
+    pintar();
+  });
+</script>

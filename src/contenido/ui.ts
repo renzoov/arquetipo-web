@@ -13,6 +13,7 @@ export const ui = {
   navMas: 'Más',
   navComparar: 'Patrones que se confunden',
   navAntipatrones: 'Antipatrones',
+  navEjercicios: 'Ejercicios',
   secciones: 'Secciones',
   abrirMenu: 'Abrir menú',
   inicio: 'Inicio',
@@ -34,6 +35,7 @@ export const ui = {
   tipoComparacion: 'Comparación',
   tipoAntipatron: 'Antipatrón',
   tipoLenguaje: 'Lenguaje',
+  tipoEjercicios: 'Ejercicios',
   tipoPagina: 'Página',
 
   // Pie de página

@@ -15,9 +15,24 @@ Construida con [Astro](https://astro.build) y [Tailwind CSS](https://tailwindcss
 | 23 patrones | `/patrones/[categoria]/[slug]` | Caso real, problema, solución, diagrama, código, cuándo usarlo y el código en 8 lenguajes |
 | Patrones que se confunden | `/comparaciones` | Pares de patrones parecidos: tabla de diferencias y el mismo caso resuelto con cada uno |
 | Antipatrones | `/antipatrones` | Code smells, por qué duelen y qué principio o patrón los corrige |
+| Ejercicios | `/ejercicios` y `/ejercicios/[seccion]` | Exámenes de POO, SOLID y patrones con preguntas al azar y corrección inmediata |
 | Código por lenguaje | `/lenguajes/[lenguaje]` | Los 23 patrones de forma idiomática en cada lenguaje |
 
-El buscador global se abre con **Ctrl+K** (o ⌘K) y busca patrones (también por el problema que resuelven), principios, pilares, comparaciones, antipatrones y lenguajes.
+El buscador global se abre con **Ctrl+K** (o ⌘K) y busca patrones (también por el problema que resuelven), principios, pilares, comparaciones, antipatrones, ejercicios y lenguajes.
+
+## Ejercicios
+
+Los bancos de preguntas están en `src/contenido/ejercicios/`: 80 de POO (10 por pilar o relación), 100 de SOLID (20 por principio) y 230 de patrones (10 por patrón). Cada fila es `[pregunta, correcta, [3 incorrectas], explicación, código opcional]`.
+
+- Por intento salen 10 de POO (todos los temas), 10 de SOLID (2 por principio) y 15 de patrones (5 por categoría). Las cuotas están en `src/contenido/ejercicios/index.ts`.
+- El navegador mezcla las alternativas, recuerda las preguntas de los dos últimos intentos para no repetirlas y guarda el mejor resultado (`localStorage`).
+- Cada página de patrón muestra dos preguntas al azar de su banco ("Pon a prueba lo que leíste").
+- Al compilar se comprueba que no haya ids repetidos, alternativas duplicadas ni temas sin preguntas.
+- Para que la respuesta correcta no se delate por su largo, conviene que no sea siempre la alternativa más larga.
+
+## Progreso
+
+Las páginas de POO, diseño, SOLID y cada patrón tienen un botón "Marcar como estudiado". El progreso se guarda en el navegador (`src/lib/progreso.ts`) y se ve en el catálogo (contador, barra y tarjetas marcadas) y en la ruta de aprendizaje.
 
 ## Estructura
 
@@ -31,12 +46,12 @@ El buscador global se abre con **Ctrl+K** (o ⌘K) y busca patrones (también po
 │   └── verificar-codigo.mjs      # Compila y ejecuta los ejemplos
 └── src/
     ├── codigo/<lenguaje>/   # Los 23 ejemplos por lenguaje
-    ├── components/          # Navbar, Footer, Buscador, BloqueCodigo, Logo
+    ├── components/          # Navbar, Footer, Buscador, BloqueCodigo, Logo, EjerciciosPatron, MarcarEstudiado
     │   └── inicio/          # Secciones de la página de inicio
-    ├── contenido/           # Textos de cada página y de la interfaz (ui.ts)
+    ├── contenido/           # Textos de cada página, de la interfaz (ui.ts) y bancos de ejercicios
     ├── data/                # Patrones, catálogo y lenguajes
     ├── layouts/             # Layout con SEO (canonical, Open Graph)
-    ├── lib/                 # Resaltado de código
+    ├── lib/                 # Resaltado de código, motor de ejercicios y progreso
     ├── pages/
     │   ├── buscar.json.ts   # Índice del buscador
     │   ├── 404.astro

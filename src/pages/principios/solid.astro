@@ -3,6 +3,7 @@
 import Layout from '../../layouts/Layout.astro';
 import Navbar from '../../components/Navbar.astro';
 import Footer from '../../components/Footer.astro';
+import MarcarEstudiado from '../../components/MarcarEstudiado.astro';
 import { formato, ui } from '../../contenido/ui';
 import { ENCABEZADO as e, PRINCIPIOS_SOLID } from '../../contenido/solid';
 import { resaltar } from '../../lib/codigo';
@@ -26,13 +27,14 @@ const principios = await Promise.all(
       <!-- Encabezado -->
       <header class="flex flex-col gap-4">
         <nav class="flex items-center gap-2 font-telemetry text-xs text-on-surface-variant" aria-label={ui.ruta}>
-          <a href={'/'} class="hover:text-primary">{ui.inicio}</a>
+          <a href="/" class="hover:text-primary">{ui.inicio}</a>
           <span>/</span>
           <span class="text-primary-container">{e.tituloResaltado}</span>
         </nav>
         <span class="font-badge text-[10px] text-primary-container uppercase tracking-widest">{formato(ui.pasoDeLaRuta, { n: '03' })}</span>
         <h1 class="font-headline text-4xl sm:text-5xl font-bold text-primary">{e.tituloPre} <span transition:name="titulo-solid" class="inline-block">{e.tituloResaltado}</span></h1>
         <p class="font-body text-lg text-slate-200 max-w-4xl leading-relaxed">{e.intro}</p>
+        <MarcarEstudiado id="solid" />
         <nav class="flex flex-wrap gap-2 pt-1" aria-label={e.titulo}>
           {principios.map((p) => (
             <a href={`#${p.id}`} class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container-low border border-surface-container-high hover:border-primary-container/40 font-body text-sm text-slate-200 transition-colors">
@@ -90,9 +92,12 @@ const principios = await Promise.all(
         </article>
       ))}
 
-      <a href={'/#patrones'} class="self-end inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary-container text-on-primary font-body text-sm font-semibold hover:bg-primary transition-colors">
-        {e.siguiente} <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
-      </a>
+      <div class="flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-surface-container-high">
+        <MarcarEstudiado id="solid" />
+        <a href="/#patrones" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary-container text-on-primary font-body text-sm font-semibold hover:bg-primary transition-colors">
+          {e.siguiente} <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+        </a>
+      </div>
     </div>
     <Footer />
   </main>
