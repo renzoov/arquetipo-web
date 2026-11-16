@@ -1,20 +1,15 @@
 ---
-const ruta = [
-  { n: '01', transicion: 'titulo-poo', titulo: 'Fundamentos de POO', texto: 'Los 4 pilares y cómo se relacionan los objetos. La base de todo lo demás.', href: '/fundamentos/poo', icono: 'account_tree', color: 'text-secondary-container', fondo: 'bg-secondary-container/15 border-secondary-container/30' },
-  { n: '02', transicion: 'titulo-diseno', titulo: 'Principios de diseño', texto: 'Cinco ideas que están detrás de SOLID y de todos los patrones.', href: '/principios/diseno', icono: 'lightbulb', color: 'text-secondary-fixed', fondo: 'bg-secondary-container/10 border-secondary-container/25' },
-  { n: '03', transicion: 'titulo-solid', titulo: 'Principios SOLID', texto: 'Cinco guías para escribir código que se pueda cambiar sin miedo.', href: '/principios/solid', icono: 'memory', color: 'text-primary-container', fondo: 'bg-primary-container/15 border-primary-container/30' },
-  { n: '04', transicion: undefined, titulo: '23 patrones de diseño', texto: 'Soluciones probadas a problemas que se repiten, con casos reales.', href: '#patrones', icono: 'category', color: 'text-tertiary-fixed-dim', fondo: 'bg-tertiary-fixed-dim/15 border-tertiary-fixed-dim/30' },
-  { n: '05', transicion: undefined, titulo: 'En tu lenguaje', texto: 'Cada patrón aplicado de forma idiomática en 8 lenguajes.', href: '#lenguajes', icono: 'code_blocks', color: 'text-amber-300', fondo: 'bg-amber-400/10 border-amber-400/25' },
-];
+// Los 5 pasos de la ruta de aprendizaje.
+import { RUTA } from '../../contenido/inicio';
 ---
 
 <section id="ruta" class="scroll-mt-24 flex flex-col gap-5">
   <div>
-    <span class="font-badge text-[10px] text-secondary-container uppercase tracking-widest">Por dónde empezar</span>
-    <h2 class="font-headline text-2xl font-bold uppercase text-primary mt-1">Ruta de aprendizaje</h2>
+    <span class="font-badge text-[10px] text-secondary-container uppercase tracking-widest">{RUTA.etiqueta}</span>
+    <h2 class="font-headline text-2xl font-bold uppercase text-primary mt-1">{RUTA.titulo}</h2>
   </div>
   <ol class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-    {ruta.map((paso) => (
+    {RUTA.pasos.map((paso) => (
       <li>
         <a href={paso.href} class="h-full p-5 rounded-xl bg-surface-container-lowest/90 border border-surface-container-high hover:border-primary-container/40 transition-all flex flex-col gap-3 group">
           <div class="flex items-center justify-between">
@@ -27,7 +22,7 @@ const ruta = [
             ? <h3 transition:name={paso.transicion} class="font-code text-sm font-bold text-slate-100 w-fit">{paso.titulo}</h3>
             : <h3 class="font-code text-sm font-bold text-slate-100">{paso.titulo}</h3>}
           <p class="font-body text-xs text-slate-300 leading-relaxed">{paso.texto}</p>
-          <span class={`mt-auto font-badge text-[10px] uppercase tracking-wider ${paso.color}`}>Empezar →</span>
+          <span class={`mt-auto font-badge text-[10px] uppercase tracking-wider ${paso.color}`}>{RUTA.empezar}</span>
         </a>
       </li>
     ))}

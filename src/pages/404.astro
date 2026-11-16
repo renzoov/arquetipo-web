@@ -1,0 +1,23 @@
+---
+// Página 404: los servidores estáticos la muestran para cualquier ruta que no existe.
+import Layout from '../layouts/Layout.astro';
+import Logo from '../components/Logo.astro';
+import { ui } from '../contenido/ui';
+---
+
+<Layout title="404 · Arquetipo" noIndex>
+  <main class="w-full min-h-screen bg-background flex items-center justify-center px-4 py-16">
+    <section class="max-w-lg text-center flex flex-col items-center gap-5">
+      <Logo size={56} />
+      <span class="font-headline text-7xl font-bold text-primary-container">404</span>
+      <h1 class="font-headline text-3xl font-bold text-primary">{ui.noEncontradaTitulo}</h1>
+      <p class="font-body text-base text-slate-300 leading-relaxed">{ui.noEncontradaTexto}</p>
+      <div class="flex flex-wrap justify-center gap-3 pt-2">
+        <a href="/" class="px-5 py-2.5 rounded-full bg-primary-container text-on-primary font-body text-sm font-semibold hover:bg-primary transition-colors">{ui.volverInicio}</a>
+        <button type="button" data-abrir-buscador class="px-5 py-2.5 rounded-full bg-surface-container-high hover:bg-surface-variant text-primary font-body text-sm font-medium transition-colors flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[18px]">search</span>{ui.buscar}
+        </button>
+      </div>
+    </section>
+  </main>
+</Layout>

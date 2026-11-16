@@ -11,12 +11,14 @@
     "preview": "astro preview",
     "astro": "astro",
     "check:diagrams": "node scripts/check-diagrams.mjs",
-    "verificar:codigo": "node scripts/verificar-codigo.mjs"
+    "verificar:codigo": "node scripts/verificar-codigo.mjs",
+    "generar:og": "node scripts/generar-og.mjs"
   },
   "dependencies": {
     "astro": "^7.4.5"
   },
   "devDependencies": {
+    "@astrojs/sitemap": "^3.7.5",
     "@tailwindcss/vite": "^4.3.4",
     "playwright": "^1.64.1",
     "tailwindcss": "^4.3.4"

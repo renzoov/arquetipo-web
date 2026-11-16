@@ -1,19 +1,17 @@
 ---
+// Página de un patrón: caso real, diagrama, código antes y después, cuándo usarlo y el código en 8 lenguajes.
 import Layout from '../../../layouts/Layout.astro';
 import Navbar from '../../../components/Navbar.astro';
 import Footer from '../../../components/Footer.astro';
 import BloqueCodigo from '../../../components/BloqueCodigo.astro';
-import { PATTERNS, type PatternData } from '../../../data/patterns';
+import { formato, ui } from '../../../contenido/ui';
+import { COLOR_CATEGORIA, PATRONES, nombrePatron, rutaPatron, type PatternData } from '../../../data/catalogo';
 import { LENGUAJES, ejemplo, nombreArchivo } from '../../../data/lenguajes';
-import { codeToHtml } from 'shiki';
 import { COMPARACIONES } from '../../../contenido/comparaciones';
-import { nombrePatron } from '../../../data/catalogo';
+import { resaltar } from '../../../lib/codigo';
 
 export function getStaticPaths() {
-  return PATTERNS.map((p) => ({
-    params: { categoria: p.category, slug: p.slug },
-    props: { pattern: p },
-  }));
+  return PATRONES.map((p) => ({ params: { categoria: p.category, slug: p.slug }, props: { pattern: p } }));
 }
 
 interface Props {
@@ -22,30 +20,25 @@ interface Props {
 
 const { pattern } = Astro.props;
 
-const ordenados = [...PATTERNS].sort((a, b) => a.order - b.order);
-const indice = ordenados.findIndex((p) => p.slug === pattern.slug);
-const anterior = ordenados[indice - 1];
-const siguiente = ordenados[indice + 1];
+const indice = PATRONES.findIndex((p) => p.slug === pattern.slug);
+const anterior = PATRONES[indice - 1];
+const siguiente = PATRONES[indice + 1];
 
-const color = {
-  creacionales: { texto: 'text-primary-container', borde: 'border-primary-container/30', fondo: 'bg-primary-container/10' },
-  estructurales: { texto: 'text-tertiary-fixed-dim', borde: 'border-tertiary-fixed-dim/30', fondo: 'bg-tertiary-fixed-dim/10' },
-  comportamiento: { texto: 'text-secondary-container', borde: 'border-secondary-container/30', fondo: 'bg-secondary-container/10' },
-}[pattern.category];
+const color = COLOR_CATEGORIA[pattern.category];
 
-const codigoSin = await codeToHtml(pattern.codigoProblematico, { lang: 'typescript', theme: 'tokyo-night' });
-const codigoCon = await codeToHtml(pattern.codigoSolucion, { lang: 'typescript', theme: 'tokyo-night' });
+const codigoSin = await resaltar(pattern.codigoProblematico);
+const codigoCon = await resaltar(pattern.codigoSolucion);
 // Comparaciones con los patrones con los que se suele confundir
 const comparaciones = COMPARACIONES.filter((c) => c.patrones.includes(pattern.slug)).map((c) => ({
   id: c.id,
   otros: c.patrones.filter((s) => s !== pattern.slug).map(nombrePatron).join(' / '),
 }));
-const href = (p: PatternData) => `/patrones/${p.category}/${p.slug}`;
+const href = (p: PatternData) => rutaPatron(p.slug);
 
-const ejemplos = LENGUAJES.map((l) => ({ lenguaje: l, ejemplo: ejemplo(l, pattern.slug, 'es') }));
+const ejemplos = LENGUAJES.map((l) => ({ lenguaje: l, ejemplo: ejemplo(l, pattern.slug) }));
 ---
 
-<Layout title={`${pattern.name} · ${pattern.categoryLabel} · Arquetipo`}>
+<Layout title={`${pattern.name} · ${pattern.categoryLabel} · Arquetipo`} description={pattern.purpose}>
   <Navbar />
 
   <main class="w-full bg-background min-h-screen">
@@ -53,18 +46,18 @@ const ejemplos = LENGUAJES.map((l) => ({ lenguaje: l, ejemplo: ejemplo(l, patter
 
       <!-- Encabezado -->
       <header class="flex flex-col gap-5">
-        <nav class="flex flex-wrap items-center gap-2 font-telemetry text-xs text-on-surface-variant" aria-label="Ruta">
-          <a href="/" class="hover:text-primary">Inicio</a>
+        <nav class="flex flex-wrap items-center gap-2 font-telemetry text-xs text-on-surface-variant" aria-label={ui.ruta}>
+          <a href={'/'} class="hover:text-primary">{ui.inicio}</a>
           <span>/</span>
-          <a href="/#patrones" class="hover:text-primary">Patrones</a>
+          <a href={'/#patrones'} class="hover:text-primary">{ui.patrones}</a>
           <span>/</span>
           <span class={color.texto}>{pattern.categoryLabel}</span>
         </nav>
 
         <div class="flex flex-wrap gap-2 font-badge text-[11px]">
           <span class={`px-2.5 py-1 rounded border ${color.borde} ${color.fondo} ${color.texto} font-bold uppercase`}>{pattern.categoryLabel}</span>
-          <span class="px-2.5 py-1 rounded border border-surface-container-high bg-surface-container-low text-on-surface-variant">Uso: {pattern.frecuenciaUso}</span>
-          <span class="px-2.5 py-1 rounded border border-surface-container-high bg-surface-container-low text-on-surface-variant">Complejidad: {pattern.complejidad}</span>
+          <span class="px-2.5 py-1 rounded border border-surface-container-high bg-surface-container-low text-on-surface-variant">{ui.uso}: {pattern.frecuenciaUso}</span>
+          <span class="px-2.5 py-1 rounded border border-surface-container-high bg-surface-container-low text-on-surface-variant">{ui.complejidad}: {pattern.complejidad}</span>
         </div>
 
         <div class="flex flex-col gap-2">
@@ -83,7 +76,7 @@ const ejemplos = LENGUAJES.map((l) => ({ lenguaje: l, ejemplo: ejemplo(l, patter
       <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="p-6 rounded-xl bg-surface-container-lowest/90 border border-surface-container-high flex flex-col gap-3">
           <h2 class="font-badge text-xs uppercase tracking-wider text-primary-container font-bold flex items-center gap-2">
-            <span class="material-symbols-outlined text-[18px]">work</span>El caso real
+            <span class="material-symbols-outlined text-[18px]">work</span>{ui.casoReal}
           </h2>
           <p class="font-body text-[15px] text-slate-200 leading-relaxed">{pattern.historiaReal}</p>
         </div>
@@ -91,13 +84,13 @@ const ejemplos = LENGUAJES.map((l) => ({ lenguaje: l, ejemplo: ejemplo(l, patter
         <div class="p-6 rounded-xl bg-surface-container-lowest/90 border border-surface-container-high flex flex-col gap-5">
           <div class="flex flex-col gap-2">
             <h2 class="font-badge text-xs uppercase tracking-wider text-amber-300 font-bold flex items-center gap-2">
-              <span class="material-symbols-outlined text-[18px]">warning</span>El problema sin el patrón
+              <span class="material-symbols-outlined text-[18px]">warning</span>{ui.problemaSinPatron}
             </h2>
             <p class="font-body text-[15px] text-slate-200 leading-relaxed">{pattern.dolorIngenuo}</p>
           </div>
           <div class="flex flex-col gap-2 pt-4 border-t border-surface-container-high">
             <h2 class="font-badge text-xs uppercase tracking-wider text-secondary-container font-bold flex items-center gap-2">
-              <span class="material-symbols-outlined text-[18px]">check_circle</span>Cómo lo resuelve el patrón
+              <span class="material-symbols-outlined text-[18px]">check_circle</span>{ui.comoLoResuelve}
             </h2>
             <p class="font-body text-[15px] text-slate-200 leading-relaxed">{pattern.solucionPatron}</p>
           </div>
@@ -107,48 +100,48 @@ const ejemplos = LENGUAJES.map((l) => ({ lenguaje: l, ejemplo: ejemplo(l, patter
       <!-- 2. Diagrama -->
       <section class="flex flex-col gap-3">
         <h2 class="font-headline text-2xl font-bold uppercase text-primary flex items-center gap-2">
-          <span class="material-symbols-outlined text-primary-container">schema</span>Diagrama de clases
+          <span class="material-symbols-outlined text-primary-container">schema</span>{ui.diagramaClases}
         </h2>
         <div class="rounded-xl overflow-hidden border border-surface-container-high bg-[#0b0e15]">
           <iframe
             src={`/diagrams/${pattern.slug}.class.html`}
-            title={`Diagrama de clases del patrón ${pattern.name}`}
+            title={formato(ui.diagramaDe, { x: pattern.name })}
             class="w-full h-[760px] border-0 archify-frame block"
             scrolling="no"
           ></iframe>
         </div>
         <p class="font-body text-xs text-on-surface-variant">
-          Diagrama interactivo: puedes acercar, mover el lienzo y pasar el cursor sobre cada clase para ver su detalle.
+          {ui.diagramaAyuda}
         </p>
       </section>
 
       <!-- 3. Código antes / después -->
       <section class="flex flex-col gap-4">
         <h2 class="font-headline text-2xl font-bold uppercase text-primary flex items-center gap-2">
-          <span class="material-symbols-outlined text-primary-container">code</span>El código, antes y después
+          <span class="material-symbols-outlined text-primary-container">code</span>{ui.codigoAntesDespues}
         </h2>
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
           <div class="flex flex-col rounded-xl border border-amber-400/30 bg-surface-container-low overflow-hidden">
             <div class="flex items-center justify-between px-4 py-2.5 border-b border-surface-container-high">
               <span class="font-badge text-[11px] uppercase font-bold text-amber-300 flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-[16px]">cancel</span>Sin el patrón
+                <span class="material-symbols-outlined text-[16px]">cancel</span>{ui.sinPatron}
               </span>
-              <span class="font-badge text-[10px] text-amber-300/80">ANTES</span>
+              <span class="font-badge text-[10px] text-amber-300/80">{ui.antes}</span>
             </div>
             <div class="shiki-wrapper shiki-plano" set:html={codigoSin}></div>
           </div>
           <div class="flex flex-col rounded-xl border border-secondary-container/30 bg-surface-container-low overflow-hidden">
             <div class="flex items-center justify-between px-4 py-2.5 border-b border-surface-container-high">
               <span class="font-badge text-[11px] uppercase font-bold text-secondary-container flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-[16px]">check_circle</span>Con el patrón
+                <span class="material-symbols-outlined text-[16px]">check_circle</span>{ui.conPatron}
               </span>
-              <span class="font-badge text-[10px] text-secondary-container/80">DESPUÉS</span>
+              <span class="font-badge text-[10px] text-secondary-container/80">{ui.despues}</span>
             </div>
             <div class="shiki-wrapper shiki-plano" set:html={codigoCon}></div>
           </div>
         </div>
         <p class="font-body text-xs text-on-surface-variant">
-          Ejemplos en TypeScript, simplificados para mostrar la idea: los tipos auxiliares (Pedido, Cliente…) se omiten.
+          {ui.notaEjemplosTs}
         </p>
       </section>
 
@@ -156,7 +149,7 @@ const ejemplos = LENGUAJES.map((l) => ({ lenguaje: l, ejemplo: ejemplo(l, patter
         <section class="p-5 rounded-xl bg-primary-container/5 border border-primary-container/25 flex gap-4">
           <span class="material-symbols-outlined text-primary-container text-[24px] shrink-0">lightbulb</span>
           <div class="flex flex-col gap-1.5">
-            <h2 class="font-badge text-xs uppercase tracking-wider text-primary-container font-bold">Matiz importante</h2>
+            <h2 class="font-badge text-xs uppercase tracking-wider text-primary-container font-bold">{ui.matiz}</h2>
             <p class="font-body text-[15px] text-slate-200 leading-relaxed">{pattern.nota}</p>
           </div>
         </section>
@@ -166,7 +159,7 @@ const ejemplos = LENGUAJES.map((l) => ({ lenguaje: l, ejemplo: ejemplo(l, patter
       <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="p-6 rounded-xl bg-surface-container-low border border-surface-container-high flex flex-col gap-3">
           <h2 class="font-badge text-xs uppercase tracking-wider text-secondary-container font-bold flex items-center gap-2">
-            <span class="material-symbols-outlined text-[18px]">thumb_up</span>Cuándo usarlo
+            <span class="material-symbols-outlined text-[18px]">thumb_up</span>{ui.cuandoUsarlo}
           </h2>
           <ul class="flex flex-col gap-2.5">
             {pattern.cuandoUsarlo.map((c) => (
@@ -178,7 +171,7 @@ const ejemplos = LENGUAJES.map((l) => ({ lenguaje: l, ejemplo: ejemplo(l, patter
         </div>
         <div class="p-6 rounded-xl bg-surface-container-low border border-amber-400/30 flex flex-col gap-3">
           <h2 class="font-badge text-xs uppercase tracking-wider text-amber-300 font-bold flex items-center gap-2">
-            <span class="material-symbols-outlined text-[18px]">do_not_disturb_on</span>Cuándo no usarlo
+            <span class="material-symbols-outlined text-[18px]">do_not_disturb_on</span>{ui.cuandoNoUsarlo}
           </h2>
           <ul class="flex flex-col gap-2.5">
             {pattern.cuandoNoUsarlo.map((c) => (
@@ -194,7 +187,7 @@ const ejemplos = LENGUAJES.map((l) => ({ lenguaje: l, ejemplo: ejemplo(l, patter
       <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="p-6 rounded-xl bg-surface-container-lowest/90 border border-surface-container-high flex flex-col gap-3">
           <h2 class="font-badge text-xs uppercase tracking-wider text-primary-container font-bold flex items-center gap-2">
-            <span class="material-symbols-outlined text-[18px]">memory</span>Principios en juego
+            <span class="material-symbols-outlined text-[18px]">memory</span>{ui.principiosEnJuego}
           </h2>
           <ul class="flex flex-col gap-2.5">
             {pattern.principiosClave.map((p) => (
@@ -206,7 +199,7 @@ const ejemplos = LENGUAJES.map((l) => ({ lenguaje: l, ejemplo: ejemplo(l, patter
         </div>
         <div class="p-6 rounded-xl bg-surface-container-lowest/90 border border-surface-container-high flex flex-col gap-3">
           <h2 class="font-badge text-xs uppercase tracking-wider text-tertiary-fixed-dim font-bold flex items-center gap-2">
-            <span class="material-symbols-outlined text-[18px]">hub</span>Patrones relacionados
+            <span class="material-symbols-outlined text-[18px]">hub</span>{ui.relacionados}
           </h2>
           <ul class="flex flex-col gap-2.5">
             {pattern.relaciones.map((r) => (
@@ -221,7 +214,7 @@ const ejemplos = LENGUAJES.map((l) => ({ lenguaje: l, ejemplo: ejemplo(l, patter
       {comparaciones.length > 0 && (
         <section class="p-5 rounded-xl bg-surface-container-low border border-surface-container-high flex flex-wrap items-center gap-3">
           <span class="font-badge text-xs uppercase tracking-wider text-primary-container font-bold flex items-center gap-2 mr-1">
-            <span class="material-symbols-outlined text-[18px]">compare_arrows</span>Se suele confundir con
+            <span class="material-symbols-outlined text-[18px]">compare_arrows</span>{ui.seConfundeCon}
           </span>
           {comparaciones.map((c) => (
             <a href={`/comparaciones#${c.id}`} class="px-3 py-1.5 rounded-full bg-surface-container-lowest border border-surface-container-high hover:border-primary-container/40 font-code text-xs text-slate-200 transition-colors">
@@ -236,12 +229,12 @@ const ejemplos = LENGUAJES.map((l) => ({ lenguaje: l, ejemplo: ejemplo(l, patter
         <div class="flex items-end justify-between flex-wrap gap-3">
           <div>
             <h2 class="font-headline text-2xl font-bold uppercase text-primary flex items-center gap-2">
-              <span class="material-symbols-outlined text-amber-300">code_blocks</span>{pattern.name} en tu lenguaje
+              <span class="material-symbols-outlined text-amber-300">code_blocks</span>{formato(ui.enTuLenguaje, { x: pattern.name })}
             </h2>
-            <p class="font-body text-sm text-slate-300 mt-1">El mismo caso, implementado completo y de forma idiomática. Se puede copiar y ejecutar.</p>
+            <p class="font-body text-sm text-slate-300 mt-1">{ui.enTuLenguajeIntro}</p>
           </div>
           {ejemplos.length > 0 && (
-            <div class="flex flex-wrap gap-2 font-telemetry text-[12px]" role="tablist" aria-label="Lenguaje">
+            <div class="flex flex-wrap gap-2 font-telemetry text-[12px]" role="tablist" aria-label={ui.lenguaje}>
               {ejemplos.map(({ lenguaje }, i) => (
                 <button type="button" role="tab" data-pestana={lenguaje.id} aria-selected={i === 0 ? 'true' : 'false'}
                   class="pestana-lenguaje px-3 py-1.5 rounded-full border border-surface-container-high bg-surface-container-low text-on-surface-variant hover:text-primary aria-selected:border-amber-400/40 aria-selected:bg-amber-400/10 aria-selected:text-amber-200">
@@ -256,7 +249,7 @@ const ejemplos = LENGUAJES.map((l) => ({ lenguaje: l, ejemplo: ejemplo(l, patter
           <div data-panel={lenguaje.id} role="tabpanel" class={i === 0 ? '' : 'hidden'}>
             <BloqueCodigo lenguaje={lenguaje} archivo={nombreArchivo(lenguaje, pattern.slug)} ejemplo={e} />
             <a href={`/lenguajes/${lenguaje.id}#${pattern.slug}`} class="inline-block mt-2 font-badge text-[11px] uppercase tracking-wider text-primary-container hover:text-primary-fixed">
-              Ver los 23 patrones en {lenguaje.nombre} →
+              {formato(ui.verLos23En, { x: lenguaje.nombre })}
             </a>
           </div>
         ))}
@@ -264,22 +257,22 @@ const ejemplos = LENGUAJES.map((l) => ({ lenguaje: l, ejemplo: ejemplo(l, patter
       </section>
 
       <!-- Navegación entre patrones -->
-      <nav class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6 border-t border-surface-container-high" aria-label="Otros patrones">
+      <nav class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6 border-t border-surface-container-high" aria-label={ui.otrosPatrones}>
         {anterior ? (
           <a href={href(anterior)} class="p-4 rounded-xl bg-surface-container-low border border-surface-container-high hover:border-primary-container/40 transition-colors flex flex-col gap-1">
-            <span class="font-telemetry text-[11px] text-on-surface-variant">← Anterior</span>
+            <span class="font-telemetry text-[11px] text-on-surface-variant">{ui.anterior}</span>
             <span class="font-code text-sm font-bold text-primary">{anterior.name}</span>
           </a>
         ) : <span></span>}
         {siguiente ? (
           <a href={href(siguiente)} class="p-4 rounded-xl bg-surface-container-low border border-surface-container-high hover:border-primary-container/40 transition-colors flex flex-col gap-1 sm:items-end text-right">
-            <span class="font-telemetry text-[11px] text-on-surface-variant">Siguiente →</span>
+            <span class="font-telemetry text-[11px] text-on-surface-variant">{ui.siguiente}</span>
             <span class="font-code text-sm font-bold text-primary">{siguiente.name}</span>
           </a>
         ) : (
-          <a href="/#patrones" class="p-4 rounded-xl bg-surface-container-low border border-surface-container-high hover:border-primary-container/40 transition-colors flex flex-col gap-1 sm:items-end text-right">
-            <span class="font-telemetry text-[11px] text-on-surface-variant">Has llegado al final</span>
-            <span class="font-code text-sm font-bold text-primary">Volver al catálogo</span>
+          <a href={'/#patrones'} class="p-4 rounded-xl bg-surface-container-low border border-surface-container-high hover:border-primary-container/40 transition-colors flex flex-col gap-1 sm:items-end text-right">
+            <span class="font-telemetry text-[11px] text-on-surface-variant">{ui.alFinal}</span>
+            <span class="font-code text-sm font-bold text-primary">{ui.volverCatalogo}</span>
           </a>
         )}
       </nav>
@@ -287,7 +280,6 @@ const ejemplos = LENGUAJES.map((l) => ({ lenguaje: l, ejemplo: ejemplo(l, patter
     <Footer />
   </main>
 </Layout>
-
 
 <script>
   // Pestañas de lenguaje (con una transición suave al cambiar de lenguaje)

@@ -1,31 +1,22 @@
 ---
 // Patrones que se confunden: pares de patrones con estructura parecida, sus diferencias
 // en una tabla y un mismo caso resuelto con cada uno.
-import Layout from '../../layouts/Layout.astro';
-import Navbar from '../../components/Navbar.astro';
-import Footer from '../../components/Footer.astro';
-import { idiomaDe, ruta, t, type Idioma } from '../../i18n/idiomas';
-import { COMPARACIONES, ENCABEZADO } from '../../contenido/comparaciones';
-import { COLOR_CATEGORIA, nombrePatron, rutaPatron } from '../../data/catalogo';
-import { PATTERNS } from '../../data/patterns';
-import { resaltarTs } from '../../lib/codigo';
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import { COMPARACIONES, ENCABEZADO as e } from '../contenido/comparaciones';
+import { ui } from '../contenido/ui';
+import { colorPatron, nombrePatron, rutaPatron } from '../data/catalogo';
+import { resaltar } from '../lib/codigo';
 
-export function getStaticPaths() {
-  // Por ahora solo en español; la versión en inglés se activa con el resto del sitio bilingüe.
-  return [{ params: { idioma: undefined } }];
-}
 
-const idioma: Idioma = idiomaDe(Astro.params.idioma);
-const e = Object.fromEntries(Object.entries(ENCABEZADO).map(([k, v]) => [k, t(v, idioma)])) as Record<keyof typeof ENCABEZADO, string>;
-
-const colorDe = (slug: string) => COLOR_CATEGORIA[PATTERNS.find((p) => p.slug === slug)!.category];
 const titulo = (patrones: string[]) => patrones.map(nombrePatron).join(' vs ');
 
 const comparaciones = await Promise.all(
   COMPARACIONES.map(async (c) => ({
     ...c,
     titulo: titulo(c.patrones),
-    soluciones: await Promise.all(c.soluciones.map(async (s) => ({ ...s, html: await resaltarTs(s.codigo, idioma) }))),
+    soluciones: await Promise.all(c.soluciones.map(async (s) => ({ ...s, html: await resaltar(s.codigo) }))),
   })),
 );
 ---
@@ -38,8 +29,8 @@ const comparaciones = await Promise.all(
 
       <!-- Encabezado -->
       <header class="flex flex-col gap-4">
-        <nav class="flex items-center gap-2 font-telemetry text-xs text-on-surface-variant" aria-label="Ruta">
-          <a href={ruta(idioma, '/')} class="hover:text-primary">Inicio</a>
+        <nav class="flex items-center gap-2 font-telemetry text-xs text-on-surface-variant" aria-label={ui.ruta}>
+          <a href={'/'} class="hover:text-primary">{ui.inicio}</a>
           <span>/</span>
           <span class="text-primary-container">{e.titulo}</span>
         </nav>
@@ -62,11 +53,11 @@ const comparaciones = await Promise.all(
               {c.patrones.map((slug, i) => (
                 <>
                   {i > 0 && <span class="font-telemetry text-base text-on-surface-variant">vs</span>}
-                  <a href={ruta(idioma, rutaPatron(slug))} class={`${colorDe(slug).texto} hover:underline underline-offset-4`}>{nombrePatron(slug)}</a>
+                  <a href={rutaPatron(slug)} class={`${colorPatron(slug).texto} hover:underline underline-offset-4`}>{nombrePatron(slug)}</a>
                 </>
               ))}
             </h2>
-            <p class="font-body text-base text-slate-200 leading-relaxed max-w-4xl">{t(c.idea, idioma)}</p>
+            <p class="font-body text-base text-slate-200 leading-relaxed max-w-4xl">{c.idea}</p>
           </div>
 
           <!-- El caso -->
@@ -74,7 +65,7 @@ const comparaciones = await Promise.all(
             <span class="font-badge text-xs uppercase tracking-wider text-primary-container font-bold flex items-center gap-2">
               <span class="material-symbols-outlined text-[18px]">work</span>{e.elCaso}
             </span>
-            <p class="font-body text-[15px] text-slate-200 leading-relaxed">{t(c.caso, idioma)}</p>
+            <p class="font-body text-[15px] text-slate-200 leading-relaxed">{c.caso}</p>
           </div>
 
           <!-- Tabla de diferencias -->
@@ -88,15 +79,15 @@ const comparaciones = await Promise.all(
                   <tr>
                     <th scope="col" class="px-4 py-3 font-badge text-[11px] uppercase tracking-wider text-on-surface-variant w-[22%]">{e.aspecto}</th>
                     {c.patrones.map((slug) => (
-                      <th scope="col" class={`px-4 py-3 font-code text-sm font-bold ${colorDe(slug).texto}`}>{nombrePatron(slug)}</th>
+                      <th scope="col" class={`px-4 py-3 font-code text-sm font-bold ${colorPatron(slug).texto}`}>{nombrePatron(slug)}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {c.filas.map((fila) => (
                     <tr class="border-t border-surface-container-high align-top">
-                      <th scope="row" class="px-4 py-3 font-semibold text-slate-100">{t(fila.aspecto, idioma)}</th>
-                      {fila.valores.map((v) => <td class="px-4 py-3 text-slate-300 leading-relaxed">{t(v, idioma)}</td>)}
+                      <th scope="row" class="px-4 py-3 font-semibold text-slate-100">{fila.aspecto}</th>
+                      {fila.valores.map((v) => <td class="px-4 py-3 text-slate-300 leading-relaxed">{v}</td>)}
                     </tr>
                   ))}
                 </tbody>
@@ -107,10 +98,10 @@ const comparaciones = await Promise.all(
           <!-- El mismo caso, resuelto con cada patrón -->
           <div class={`grid grid-cols-1 gap-5 ${c.soluciones.length === 3 ? '2xl:grid-cols-3' : 'xl:grid-cols-2'}`}>
             {c.soluciones.map((s) => (
-              <div class={`flex flex-col rounded-xl border ${colorDe(s.patron).borde} bg-surface-container-low overflow-hidden`}>
+              <div class={`flex flex-col rounded-xl border ${colorPatron(s.patron).borde} bg-surface-container-low overflow-hidden`}>
                 <div class="px-4 py-3 border-b border-surface-container-high flex flex-col gap-1.5">
-                  <span class={`font-badge text-[11px] uppercase font-bold ${colorDe(s.patron).texto}`}>{e.resuelto} {nombrePatron(s.patron)}</span>
-                  <p class="font-body text-sm text-slate-200 leading-relaxed">{t(s.explicacion, idioma)}</p>
+                  <span class={`font-badge text-[11px] uppercase font-bold ${colorPatron(s.patron).texto}`}>{e.resuelto} {nombrePatron(s.patron)}</span>
+                  <p class="font-body text-sm text-slate-200 leading-relaxed">{s.explicacion}</p>
                 </div>
                 <div class="shiki-wrapper shiki-plano flex-1" set:html={s.html}></div>
               </div>
@@ -120,7 +111,7 @@ const comparaciones = await Promise.all(
           <!-- La pregunta para decidir -->
           <p class="p-4 rounded-lg bg-primary-container/5 border border-primary-container/20 font-body text-sm text-slate-200 leading-relaxed flex gap-3">
             <span class="material-symbols-outlined text-primary-container text-[22px] shrink-0">help</span>
-            <span><strong class="text-primary-container">{e.pregunta}:</strong> {t(c.pregunta, idioma)}</span>
+            <span><strong class="text-primary-container">{e.pregunta}:</strong> {c.pregunta}</span>
           </p>
         </article>
       ))}

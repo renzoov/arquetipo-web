@@ -1,0 +1,197 @@
+---
+// Buscador global: se abre con Ctrl+K (o ⌘K) o con el botón de la barra superior.
+// Descarga el índice (/buscar.json) la primera vez que se abre.
+import { ui } from '../contenido/ui';
+---
+
+<dialog
+  id="buscador"
+  data-sin-resultados={ui.buscarSinResultados}
+  data-ayuda={ui.buscarAyuda}
+  aria-label={ui.buscar}
+  class="buscador m-0 p-0 w-full max-w-none h-full max-h-none bg-transparent backdrop:bg-black/60 backdrop:backdrop-blur-sm"
+>
+  <div class="mx-auto mt-[8vh] w-[calc(100%-2rem)] max-w-2xl rounded-2xl bg-surface-container-low border border-surface-container-high shadow-2xl flex flex-col overflow-hidden">
+    <label class="flex items-center gap-3 px-4 border-b border-surface-container-high">
+      <span class="material-symbols-outlined text-[22px] text-primary-container">search</span>
+      <input
+        id="buscador-entrada"
+        type="text"
+        role="searchbox"
+        enterkeyhint="search"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder={ui.buscarPlaceholder}
+        aria-label={ui.buscar}
+        aria-controls="buscador-resultados"
+        class="flex-1 h-14 bg-transparent border-0 outline-none font-body text-base text-on-surface placeholder:text-on-surface-variant"
+      />
+      <kbd class="hidden sm:inline font-telemetry text-[10px] px-1.5 py-0.5 rounded border border-surface-container-high text-on-surface-variant">Esc</kbd>
+    </label>
+    <ul id="buscador-resultados" role="listbox" class="max-h-[60vh] overflow-y-auto p-2 flex flex-col gap-1"></ul>
+    <div class="hidden sm:flex items-center gap-4 px-4 py-2.5 border-t border-surface-container-high font-telemetry text-[11px] text-on-surface-variant">
+      <span><kbd class="px-1 rounded border border-surface-container-high">↑</kbd> <kbd class="px-1 rounded border border-surface-container-high">↓</kbd> {ui.buscarNavegar}</span>
+      <span><kbd class="px-1 rounded border border-surface-container-high">Enter</kbd> {ui.buscarAbrir}</span>
+      <span><kbd class="px-1 rounded border border-surface-container-high">Esc</kbd> {ui.buscarCerrar}</span>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  import { navigate } from 'astro:transitions/client';
+
+  interface Entrada { t: string; d: string; k: string; i: string; u: string; x?: string; texto?: string; titulo?: string }
+
+  let indice: Promise<Entrada[]> | null = null;
+  let resultados: Entrada[] = [];
+  let seleccion = 0;
+
+  /** Minúsculas y sin acentos, para que "patron" encuentre "Patrón". */
+  const normalizar = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+  const elementos = () => ({
+    dialogo: document.querySelector<HTMLDialogElement>('#buscador'),
+    entrada: document.querySelector<HTMLInputElement>('#buscador-entrada'),
+    lista: document.querySelector<HTMLUListElement>('#buscador-resultados'),
+  });
+
+  function cargarIndice(): Promise<Entrada[]> {
+    indice ??= fetch('/buscar.json')
+      .then((r) => r.json() as Promise<Entrada[]>)
+      .then((lista) => lista.map((e) => ({ ...e, titulo: normalizar(e.t), texto: normalizar(`${e.t} ${e.k} ${e.d} ${e.x ?? ''}`) })))
+      .catch(() => {
+        indice = null; // se reintenta la próxima vez
+        return [];
+      });
+    return indice;
+  }
+
+  function buscar(entradas: Entrada[], consulta: string): Entrada[] {
+    const q = normalizar(consulta.trim());
+    if (!q) return [];
+    const palabras = q.split(/\s+/);
+    return entradas
+      .filter((e) => palabras.every((p) => e.texto!.includes(p)))
+      .map((e) => {
+        let puntos = 0;
+        if (e.titulo === q) puntos += 100;
+        else if (e.titulo!.startsWith(q)) puntos += 60;
+        else if (e.titulo!.includes(q)) puntos += 40;
+        puntos += palabras.filter((p) => e.titulo!.includes(p)).length * 10;
+        return { e, puntos };
+      })
+      .sort((a, b) => b.puntos - a.puntos)
+      .slice(0, 12)
+      .map(({ e }) => e);
+  }
+
+  const escapar = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  function pintar(consulta: string) {
+    const { dialogo, lista, entrada } = elementos();
+    if (!dialogo || !lista || !entrada) return;
+    if (!consulta.trim()) {
+      lista.innerHTML = `<li class="px-3 py-6 text-center font-body text-sm text-on-surface-variant">${escapar(dialogo.dataset.ayuda ?? '')}</li>`;
+      entrada.removeAttribute('aria-activedescendant');
+      return;
+    }
+    if (!resultados.length) {
+      lista.innerHTML = `<li class="px-3 py-6 text-center font-body text-sm text-on-surface-variant">${escapar(dialogo.dataset.sinResultados ?? '')} “${escapar(consulta)}”</li>`;
+      entrada.removeAttribute('aria-activedescendant');
+      return;
+    }
+    lista.innerHTML = resultados
+      .map(
+        (e, i) => `
+        <li role="option" id="resultado-${i}" aria-selected="${i === seleccion}">
+          <a href="${escapar(e.u)}" class="resultado flex items-start gap-3 px-3 py-2.5 rounded-lg">
+            <span class="material-symbols-outlined text-[20px] text-primary-container mt-0.5">${escapar(e.i)}</span>
+            <span class="flex flex-col gap-0.5 min-w-0">
+              <span class="flex items-center gap-2 flex-wrap">
+                <span class="font-code text-sm font-bold text-slate-100">${escapar(e.t)}</span>
+                <span class="font-badge text-[9px] uppercase tracking-wider text-on-surface-variant">${escapar(e.k)}</span>
+              </span>
+              <span class="font-body text-xs text-slate-300 leading-relaxed">${escapar(e.d)}</span>
+            </span>
+          </a>
+        </li>`,
+      )
+      .join('');
+    entrada.setAttribute('aria-activedescendant', `resultado-${seleccion}`);
+  }
+
+  function marcar(nueva: number) {
+    if (!resultados.length) return;
+    seleccion = (nueva + resultados.length) % resultados.length;
+    const { lista, entrada } = elementos();
+    lista?.querySelectorAll('[role="option"]').forEach((op, i) => op.setAttribute('aria-selected', String(i === seleccion)));
+    lista?.querySelector(`#resultado-${seleccion}`)?.scrollIntoView({ block: 'nearest' });
+    entrada?.setAttribute('aria-activedescendant', `resultado-${seleccion}`);
+  }
+
+  async function actualizar() {
+    const { dialogo, entrada } = elementos();
+    if (!dialogo || !entrada) return;
+    const consulta = entrada.value;
+    const entradas = await cargarIndice();
+    if (consulta !== entrada.value) return; // llegó otra tecla mientras se descargaba
+    resultados = buscar(entradas, consulta);
+    seleccion = 0;
+    pintar(consulta);
+  }
+
+  function abrir() {
+    const { dialogo, entrada } = elementos();
+    if (!dialogo || !entrada || dialogo.open) return;
+    dialogo.showModal();
+    entrada.select();
+    void actualizar();
+  }
+
+  function ir(url: string) {
+    elementos().dialogo?.close();
+    navigate(url);
+  }
+
+  // Los listeners se registran una sola vez (con View Transitions este script no se vuelve a ejecutar)
+  document.addEventListener('keydown', (evento) => {
+    if ((evento.ctrlKey || evento.metaKey) && evento.key.toLowerCase() === 'k') {
+      evento.preventDefault();
+      abrir();
+      return;
+    }
+    const { dialogo } = elementos();
+    if (!dialogo?.open) return;
+    if (evento.key === 'ArrowDown') { evento.preventDefault(); marcar(seleccion + 1); }
+    else if (evento.key === 'ArrowUp') { evento.preventDefault(); marcar(seleccion - 1); }
+    else if (evento.key === 'Enter' && resultados[seleccion]) { evento.preventDefault(); ir(resultados[seleccion].u); }
+  });
+
+  document.addEventListener('input', (evento) => {
+    if ((evento.target as HTMLElement).id === 'buscador-entrada') void actualizar();
+  });
+
+  document.addEventListener('click', (evento) => {
+    const objetivo = evento.target as HTMLElement;
+    if (objetivo.closest('[data-abrir-buscador]')) {
+      abrir();
+      return;
+    }
+    const { dialogo } = elementos();
+    if (!dialogo?.open) return;
+    const enlace = objetivo.closest<HTMLAnchorElement>('a.resultado');
+    if (enlace) {
+      evento.preventDefault();
+      ir(enlace.getAttribute('href')!);
+    } else if (objetivo === dialogo) {
+      dialogo.close(); // clic en el fondo
+    }
+  });
+</script>
+
+<style is:global>
+  .buscador[open] { display: block; }
+  .buscador .resultado { transition: background-color 120ms; }
+  .buscador [aria-selected='true'] .resultado,
+  .buscador .resultado:hover { background-color: var(--color-surface-container-high); }
+</style>

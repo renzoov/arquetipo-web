@@ -1,22 +1,24 @@
 ---
+// Accesos a los 23 patrones en cada lenguaje.
 import { LENGUAJES } from '../../data/lenguajes';
+import { LENGUAJES_INICIO as L } from '../../contenido/inicio';
 ---
 
 <section id="lenguajes" class="scroll-mt-24 flex flex-col gap-5">
   <div>
-    <span class="font-badge text-[10px] text-amber-300 uppercase tracking-widest">Paso 05</span>
-    <h2 class="font-headline text-2xl font-bold uppercase text-primary mt-1">Los patrones en tu lenguaje</h2>
-    <p class="font-body text-sm text-slate-300 mt-1">Cada lenguaje tiene su forma natural de aplicar un patrón. Los 23, con código completo que compila y se ejecuta.</p>
+    <span class="font-badge text-[10px] text-amber-300 uppercase tracking-widest">{L.paso}</span>
+    <h2 class="font-headline text-2xl font-bold uppercase text-primary mt-1">{L.titulo}</h2>
+    <p class="font-body text-sm text-slate-300 mt-1">{L.texto}</p>
   </div>
   <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
     {LENGUAJES.map((l) => (
       <a href={`/lenguajes/${l.id}`} class="p-4 rounded-xl bg-surface-container-lowest/90 border border-amber-400/30 hover:border-amber-400/60 transition-colors flex flex-col gap-1.5">
         <div class="flex items-center justify-between gap-2">
           <h3 transition:name={`lenguaje-${l.id}`} class="font-code text-sm font-bold w-fit text-primary-container">{l.nombre}</h3>
-          <span class="font-badge text-[9px] px-1.5 py-0.5 rounded bg-secondary-container/15 text-secondary-container border border-secondary-container/25 uppercase">23 patrones</span>
+          <span class="font-badge text-[9px] px-1.5 py-0.5 rounded bg-secondary-container/15 text-secondary-container border border-secondary-container/25 uppercase">{L.insignia}</span>
         </div>
-        <p class="font-body text-xs text-slate-300 leading-relaxed">{l.desc.es}</p>
-        <span class="mt-auto font-badge text-[10px] uppercase tracking-wider text-amber-300">Ver código →</span>
+        <p class="font-body text-xs text-slate-300 leading-relaxed">{l.desc}</p>
+        <span class="mt-auto font-badge text-[10px] uppercase tracking-wider text-amber-300">{L.verCodigo}</span>
       </a>
     ))}
   </div>

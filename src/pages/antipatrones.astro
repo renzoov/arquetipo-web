@@ -1,0 +1,106 @@
+---
+// Antipatrones y code smells: soluciones que parecen razonables y se vuelven un problema,
+// con el código antes y después, y los principios y patrones que las corrigen.
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import { ui } from '../contenido/ui';
+import { ANTIPATRONES, ENCABEZADO as e } from '../contenido/antipatrones';
+import { colorPatron, nombrePatron, rutaPatron } from '../data/catalogo';
+import { resaltar } from '../lib/codigo';
+
+
+const antipatrones = await Promise.all(
+  ANTIPATRONES.map(async (a) => ({
+    ...a,
+    htmlAntes: await resaltar(a.antes),
+    htmlDespues: await resaltar(a.despues),
+  })),
+);
+---
+
+<Layout title={`${e.titulo} · Arquetipo`} description={e.descripcion}>
+  <Navbar />
+
+  <main class="w-full bg-background min-h-screen">
+    <div class="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-10 py-8 flex flex-col gap-12">
+
+      <!-- Encabezado -->
+      <header class="flex flex-col gap-4">
+        <nav class="flex items-center gap-2 font-telemetry text-xs text-on-surface-variant" aria-label={ui.ruta}>
+          <a href={'/'} class="hover:text-primary">{ui.inicio}</a>
+          <span>/</span>
+          <span class="text-amber-300">{e.titulo}</span>
+        </nav>
+        <h1 class="font-headline text-4xl sm:text-5xl font-bold text-primary">{e.titulo}</h1>
+        <p class="font-body text-lg text-slate-200 max-w-4xl leading-relaxed">{e.intro}</p>
+        <nav class="flex flex-wrap gap-2 pt-1" aria-label={e.titulo}>
+          {antipatrones.map((a) => (
+            <a href={`#${a.id}`} class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-low border border-surface-container-high hover:border-amber-400/50 font-code text-xs text-slate-200 transition-colors">
+              <span class="material-symbols-outlined text-[15px] text-amber-300">{a.icono}</span>{a.nombre}
+            </a>
+          ))}
+        </nav>
+      </header>
+
+      {antipatrones.map((a) => (
+        <article id={a.id} class="scroll-mt-24 p-6 lg:p-8 rounded-xl bg-surface-container-lowest/90 border border-surface-container-high flex flex-col gap-6">
+          <!-- Título -->
+          <div class="flex items-start gap-4 pb-4 border-b border-surface-container-high">
+            <span class="w-12 h-12 shrink-0 rounded-lg bg-amber-400/10 border border-amber-400/30 flex items-center justify-center text-amber-300">
+              <span class="material-symbols-outlined text-[26px]">{a.icono}</span>
+            </span>
+            <div class="flex flex-col gap-1">
+              <h2 class="font-headline text-2xl sm:text-3xl font-bold text-slate-100">{a.nombre}</h2>
+              <p class="font-telemetry text-xs text-on-surface-variant">{e.tambienLlamado}: {a.alias}</p>
+            </div>
+          </div>
+
+          <!-- Síntoma, por qué duele y corrección -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {[
+              { titulo: e.sintoma, texto: a.sintoma, icono: 'search', color: 'text-amber-300', borde: 'border-amber-400/60' },
+              { titulo: e.porQueDuele, texto: a.porQueDuele, icono: 'warning', color: 'text-rose-300', borde: 'border-rose-400/60' },
+              { titulo: e.correccion, texto: a.correccion, icono: 'build', color: 'text-emerald-300', borde: 'border-emerald-400/60' },
+            ].map((b) => (
+              <div class={`p-4 rounded-lg bg-surface-container-low border-l-2 ${b.borde} flex flex-col gap-1.5`}>
+                <span class={`font-badge text-xs uppercase tracking-wider font-bold flex items-center gap-2 ${b.color}`}>
+                  <span class="material-symbols-outlined text-[18px]">{b.icono}</span>{b.titulo}
+                </span>
+                <p class="font-body text-[15px] text-slate-200 leading-relaxed">{b.texto}</p>
+              </div>
+            ))}
+          </div>
+
+          <!-- Código antes y después -->
+          <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+            <div class="flex flex-col rounded-xl border border-rose-400/30 bg-surface-container-low overflow-hidden">
+              <span class="px-4 py-2.5 border-b border-surface-container-high font-badge text-[11px] uppercase font-bold text-rose-300">{e.antes}</span>
+              <div class="shiki-wrapper shiki-plano flex-1" set:html={a.htmlAntes}></div>
+            </div>
+            <div class="flex flex-col rounded-xl border border-emerald-400/30 bg-surface-container-low overflow-hidden">
+              <span class="px-4 py-2.5 border-b border-surface-container-high font-badge text-[11px] uppercase font-bold text-emerald-300">{e.despues}</span>
+              <div class="shiki-wrapper shiki-plano flex-1" set:html={a.htmlDespues}></div>
+            </div>
+          </div>
+
+          <!-- Lo corrigen -->
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="font-badge text-[11px] uppercase tracking-wider text-on-surface-variant font-bold mr-1">{e.loCorrigen}:</span>
+            {a.principios.map((p) => (
+              <a href={p.href} class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-low border border-surface-container-high hover:border-primary-container/40 font-body text-xs text-slate-200 transition-colors">
+                <span class="material-symbols-outlined text-[15px] text-primary-container">lightbulb</span>{p.nombre}
+              </a>
+            ))}
+            {a.patrones.map((slug) => (
+              <a href={rutaPatron(slug)} class={`px-3 py-1.5 rounded-full border ${colorPatron(slug).borde} ${colorPatron(slug).fondo} ${colorPatron(slug).texto} font-code text-xs font-bold hover:underline underline-offset-4`}>
+                {nombrePatron(slug)}
+              </a>
+            ))}
+          </div>
+        </article>
+      ))}
+    </div>
+    <Footer />
+  </main>
+</Layout>

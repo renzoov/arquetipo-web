@@ -1,9 +1,11 @@
 ---
+// Los 23 patrones en un lenguaje: un patrón a la vez, con la lista de patrones al costado.
 import Layout from '../../layouts/Layout.astro';
 import Navbar from '../../components/Navbar.astro';
 import Footer from '../../components/Footer.astro';
 import BloqueCodigo from '../../components/BloqueCodigo.astro';
-import { PATTERNS, CATEGORIAS } from '../../data/patterns';
+import { formato, ui } from '../../contenido/ui';
+import { CATEGORIAS, COLOR_CATEGORIA, PATRONES, rutaPatron } from '../../data/catalogo';
 import { LENGUAJES, ejemplo, nombreArchivo, type Lenguaje } from '../../data/lenguajes';
 
 export function getStaticPaths() {
@@ -15,15 +17,11 @@ interface Props {
 }
 
 const { lenguaje } = Astro.props;
-const patrones = [...PATTERNS].sort((a, b) => a.order - b.order).map((p) => ({ ...p, ejemplo: ejemplo(lenguaje, p.slug, 'es') }));
-const color = {
-  creacionales: { texto: 'text-primary-container', punto: 'bg-primary-container' },
-  estructurales: { texto: 'text-tertiary-fixed-dim', punto: 'bg-tertiary-fixed-dim' },
-  comportamiento: { texto: 'text-secondary-container', punto: 'bg-secondary-container' },
-};
+const patrones = PATRONES.map((p) => ({ ...p, ejemplo: ejemplo(lenguaje, p.slug) }));
+const color = COLOR_CATEGORIA;
 ---
 
-<Layout title={`Patrones de diseño en ${lenguaje.nombre} · Arquetipo`}>
+<Layout title={`${ui.lenguajeTitulo} ${lenguaje.nombre} · Arquetipo`} description={formato(ui.lenguajeDescripcion, { x: lenguaje.nombre })}>
   <Navbar />
 
   <main class="w-full bg-background min-h-screen">
@@ -31,30 +29,29 @@ const color = {
 
       <!-- Encabezado compacto -->
       <header class="flex flex-col gap-3">
-        <nav class="flex items-center gap-2 font-telemetry text-xs text-on-surface-variant" aria-label="Ruta">
-          <a href="/" class="hover:text-primary">Inicio</a>
+        <nav class="flex items-center gap-2 font-telemetry text-xs text-on-surface-variant" aria-label={ui.ruta}>
+          <a href={'/'} class="hover:text-primary">{ui.inicio}</a>
           <span>/</span>
-          <a href="/#lenguajes" class="hover:text-primary">Lenguajes</a>
+          <a href={'/#lenguajes'} class="hover:text-primary">{ui.navLenguajes}</a>
           <span>/</span>
           <span class="text-amber-300">{lenguaje.nombre}</span>
         </nav>
         <h1 class="font-headline text-3xl sm:text-4xl font-bold text-primary">
-          Los 23 patrones en <span transition:name={`lenguaje-${lenguaje.id}`} class="inline-block">{lenguaje.nombre}</span>
+          {ui.lenguajeTitulo} <span transition:name={`lenguaje-${lenguaje.id}`} class="inline-block">{lenguaje.nombre}</span>
         </h1>
         <p class="font-body text-base text-slate-300 max-w-4xl leading-relaxed">
-          El mismo caso real de cada patrón, escrito como lo haría alguien que domina {lenguaje.nombre}.
-          Son programas completos que se compilan y se ejecutan; los comentarios del final muestran lo que imprimen.
+          {formato(ui.lenguajeIntro, { x: lenguaje.nombre })}
         </p>
         <div class="flex flex-wrap gap-2">
           {lenguaje.rasgos.map((r) => (
-            <span class="px-2.5 py-0.5 rounded-full bg-surface-container-low border border-surface-container-high font-telemetry text-[11px] text-slate-300">{r.es}</span>
+            <span class="px-2.5 py-0.5 rounded-full bg-surface-container-low border border-surface-container-high font-telemetry text-[11px] text-slate-300">{r}</span>
           ))}
         </div>
       </header>
 
       <!-- Selector para pantallas pequeñas -->
       <label class="lg:hidden flex flex-col gap-1.5">
-        <span class="font-badge text-[10px] uppercase tracking-wider text-on-surface-variant">Patrón</span>
+        <span class="font-badge text-[10px] uppercase tracking-wider text-on-surface-variant">{ui.patron}</span>
         <select id="selector-patron" class="w-full px-3 py-2.5 rounded-lg bg-surface-container-low border border-surface-container-high font-code text-sm text-primary">
           {CATEGORIAS.map((c) => (
             <optgroup label={c.label}>
@@ -66,7 +63,7 @@ const color = {
 
       <div class="grid grid-cols-1 lg:grid-cols-[250px_minmax(0,1fr)] gap-8 items-start">
         <!-- Lista fija de patrones -->
-        <aside class="hidden lg:block sticky top-24 max-h-[calc(100vh-7.5rem)] overflow-y-auto pr-1 -mr-1" aria-label="Patrones">
+        <aside class="hidden lg:block sticky top-24 max-h-[calc(100vh-7.5rem)] overflow-y-auto pr-1 -mr-1" aria-label={ui.patrones}>
           <nav class="flex flex-col gap-5">
             {CATEGORIAS.map((c) => (
               <div class="flex flex-col gap-1">
@@ -91,27 +88,27 @@ const color = {
               <article data-panel-patron={p.slug} hidden={i !== 0} class="flex flex-col gap-4">
                 <div class="flex items-end justify-between flex-wrap gap-3">
                   <div class="flex flex-col gap-1">
-                    <span class={`font-badge text-[10px] uppercase tracking-wider font-bold ${color[p.category].texto}`}>{p.categoryLabel} · {i + 1} de {patrones.length}</span>
+                    <span class={`font-badge text-[10px] uppercase tracking-wider font-bold ${color[p.category].texto}`}>{p.categoryLabel} · {formato(ui.deTotal, { i: i + 1, n: patrones.length })}</span>
                     <h2 class="font-headline text-3xl font-bold text-primary">{p.name}</h2>
                     <p class="font-body text-sm text-slate-300 italic">“{p.problema}”</p>
                   </div>
-                  <a href={`/patrones/${p.category}/${p.slug}`} class="font-badge text-[11px] uppercase tracking-wider text-primary-container hover:text-primary-fixed">
-                    Ver la explicación →
+                  <a href={rutaPatron(p.slug)} class="font-badge text-[11px] uppercase tracking-wider text-primary-container hover:text-primary-fixed">
+                    {ui.verExplicacion}
                   </a>
                 </div>
 
                 {<BloqueCodigo lenguaje={lenguaje} archivo={nombreArchivo(lenguaje, p.slug)} ejemplo={p.ejemplo} />}
 
-                <nav class="grid grid-cols-2 gap-3 pt-2" aria-label="Patrón anterior y siguiente">
+                <nav class="grid grid-cols-2 gap-3 pt-2" aria-label={ui.anteriorSiguiente}>
                   {anterior ? (
                     <a href={`#${anterior.slug}`} data-ir-patron={anterior.slug} class="p-3 rounded-xl bg-surface-container-low border border-surface-container-high hover:border-primary-container/40 transition-colors flex flex-col">
-                      <span class="font-telemetry text-[11px] text-on-surface-variant">← Anterior</span>
+                      <span class="font-telemetry text-[11px] text-on-surface-variant">{ui.anterior}</span>
                       <span class="font-code text-sm font-bold text-primary">{anterior.name}</span>
                     </a>
                   ) : <span></span>}
                   {siguiente && (
                     <a href={`#${siguiente.slug}`} data-ir-patron={siguiente.slug} class="p-3 rounded-xl bg-surface-container-low border border-surface-container-high hover:border-primary-container/40 transition-colors flex flex-col items-end text-right">
-                      <span class="font-telemetry text-[11px] text-on-surface-variant">Siguiente →</span>
+                      <span class="font-telemetry text-[11px] text-on-surface-variant">{ui.siguiente}</span>
                       <span class="font-code text-sm font-bold text-primary">{siguiente.name}</span>
                     </a>
                   )}

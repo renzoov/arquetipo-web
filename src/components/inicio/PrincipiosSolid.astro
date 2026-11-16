@@ -1,29 +1,27 @@
 ---
-const solid = [
-  { l: 'S', nombre: 'Responsabilidad Única', idea: 'Una clase debe tener un solo motivo para cambiar: responder ante un único actor o área del negocio.', sintoma: 'Una clase que valida, guarda en la base de datos y envía correos.', color: 'text-secondary-container', fondo: 'bg-secondary-container/20 border-secondary-container/30', borde: 'hover:border-secondary-container/50' },
-  { l: 'O', nombre: 'Abierto / Cerrado', idea: 'Añadir comportamiento nuevo sin modificar el código que ya funciona.', sintoma: 'Cada medio de pago nuevo es otro else if en la misma función.', color: 'text-secondary-container', fondo: 'bg-secondary-container/20 border-secondary-container/30', borde: 'hover:border-secondary-container/50' },
-  { l: 'L', nombre: 'Sustitución de Liskov', idea: 'Una subclase debe poder usarse donde se espera su clase base sin romper nada.', sintoma: 'Una subclase que lanza "operación no soportada".', color: 'text-amber-300', fondo: 'bg-amber-500/20 border-amber-500/30', borde: 'hover:border-amber-400/50' },
-  { l: 'I', nombre: 'Segregación de Interfaces', idea: 'Nadie debería depender de métodos que no usa.', sintoma: 'Implementar métodos vacíos solo para cumplir con una interfaz.', color: 'text-primary-container', fondo: 'bg-primary-container/20 border-primary-container/30', borde: 'hover:border-primary-container/50' },
-  { l: 'D', nombre: 'Inversión de Dependencias', idea: 'La lógica de negocio depende de abstracciones, no de la base de datos ni del framework.', sintoma: 'Un caso de uso que hace new MySQLDriver().', color: 'text-tertiary-fixed-dim', fondo: 'bg-tertiary-fixed-dim/20 border-tertiary-fixed-dim/30', borde: 'hover:border-tertiary-fixed-dim/50' },
-];
+// Resumen de los 5 principios SOLID.
+import { SOLID_RESUMEN as S } from '../../contenido/inicio';
+import { PRINCIPIOS_SOLID } from '../../contenido/solid';
+
+const pagina = '/principios/solid';
 ---
 
 <section id="solid" class="scroll-mt-24 flex flex-col gap-5">
   <div class="flex items-end justify-between flex-wrap gap-3">
     <div>
-      <span class="font-badge text-[10px] text-primary-container uppercase tracking-widest">Paso 03</span>
-      <h2 class="font-headline text-2xl font-bold uppercase text-primary mt-1">Los 5 principios SOLID</h2>
+      <span class="font-badge text-[10px] text-primary-container uppercase tracking-widest">{S.paso}</span>
+      <h2 class="font-headline text-2xl font-bold uppercase text-primary mt-1">{S.titulo}</h2>
     </div>
-    <a href="/principios/solid" class="font-badge text-[11px] uppercase tracking-wider text-primary-container hover:text-primary-fixed">Ver los 5 con código →</a>
+    <a href={pagina} class="font-badge text-[11px] uppercase tracking-wider text-primary-container hover:text-primary-fixed">{S.verTodos}</a>
   </div>
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-    {solid.map((s) => (
-      <a href="/principios/solid" class={`p-5 rounded-xl bg-surface-container-lowest/90 border border-surface-container-high ${s.borde} transition-all flex flex-col gap-3`}>
-        <span class={`w-9 h-9 rounded border font-headline text-lg font-bold flex items-center justify-center ${s.fondo} ${s.color}`}>{s.l}</span>
+    {PRINCIPIOS_SOLID.map((s) => (
+      <a href={`${pagina}#${s.id}`} class={`p-5 rounded-xl bg-surface-container-lowest/90 border border-surface-container-high ${s.borde} transition-all flex flex-col gap-3`}>
+        <span class={`w-9 h-9 rounded border font-headline text-lg font-bold flex items-center justify-center ${s.fondo} ${s.color}`}>{s.letra}</span>
         <h3 class="font-code text-sm font-bold text-slate-100">{s.nombre}</h3>
         <p class="font-body text-xs text-slate-300 leading-relaxed">{s.idea}</p>
         <p class="mt-auto pt-3 border-t border-surface-container-high font-body text-xs text-amber-300/90 leading-relaxed">
-          <span class="font-telemetry font-bold">Síntoma:</span> {s.sintoma}
+          <span class="font-telemetry font-bold">{S.sintoma}</span> {s.sintomaCorto}
         </p>
       </a>
     ))}

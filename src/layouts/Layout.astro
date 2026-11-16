@@ -1,16 +1,22 @@
 ---
 import '../styles/global.css';
 import { ClientRouter } from 'astro:transitions';
+import { META } from '../contenido/inicio';
+import Buscador from '../components/Buscador.astro';
 
 interface Props {
 	title?: string;
 	description?: string;
+	/** Página de error: no se indexa. */
+	noIndex?: boolean;
 }
 
-const {
-	title = 'Arquetipo · Patrones de diseño de software',
-	description = 'Guía gratuita de POO, principios de diseño, SOLID y los 23 patrones de diseño clásicos, con casos reales, diagramas y código en 8 lenguajes.',
-} = Astro.props;
+const { title = META.titulo, description = META.descripcion, noIndex = false } = Astro.props;
+
+// URLs absolutas solo si se conoce el dominio (variable SITE_URL al compilar)
+const absoluta = (ruta: string) => (Astro.site ? new URL(ruta, Astro.site).href : undefined);
+const canonica = absoluta(Astro.url.pathname);
+const imagen = absoluta('/og.png');
 ---
 
 <!doctype html>
@@ -22,6 +28,23 @@ const {
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
 		<meta name="description" content={description} />
+		{noIndex && <meta name="robots" content="noindex" />}
+		{!noIndex && canonica && <link rel="canonical" href={canonica} />}
+
+		<!-- Vista previa al compartir (Open Graph y Twitter) -->
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="Arquetipo" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:locale" content="es_ES" />
+		{canonica && <meta property="og:url" content={canonica} />}
+		{imagen && <meta property="og:image" content={imagen} />}
+		{imagen && <meta property="og:image:width" content="1200" />}
+		{imagen && <meta property="og:image:height" content="630" />}
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		{imagen && <meta name="twitter:image" content={imagen} />}
 
 		<!-- Preconnect fonts -->
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -44,6 +67,7 @@ const {
 	</head>
 	<body class="bg-background text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container">
 		<slot />
+		<Buscador />
 
 		<script>
 			// Ajusta el alto de cada diagrama de Archify (iframe) a su contenido real,
